@@ -578,8 +578,8 @@ glimpse(beer_reviews_SD)
 # PLOT
 # overall_mean vs. overall_sd
 ggplot(beer_reviews_SD, aes(x = overall_sd, y = taste_sd, col = general_beer_style)) + 
-  geom_point() + 
-  stat_smooth(method = 'loess', se = TRUE) +
+  #geom_point() + 
+  stat_smooth(method = 'loess', se = FALSE) +
   #geom_jitter() + 
   #scale_x_continuous(limits = c(0,2)) + 
   #scale_y_continuous(limits = c(0,2)) + 
@@ -589,7 +589,7 @@ ggplot(beer_reviews_SD, aes(x = overall_sd, y = taste_sd, col = general_beer_sty
 # overall_sd vs beer_name_count
 ggplot(beer_reviews_SD, aes(x = overall_sd, y = beer_name_count)) + 
   geom_point() + 
-  stat_smooth(method = 'loess', se = TRUE) +
+  #stat_smooth(method = 'loess', se = TRUE) +
   #geom_jitter() + 
   #scale_x_continuous(limits = c(0,2)) + 
   #scale_y_continuous(limits = c(0,2)) + 
@@ -627,7 +627,6 @@ ggplot(beer_reviews_SD, aes(x = overall_sd, y = aroma_sd)) +
 # GRAPH NOTE:
 # The outliers contained in the graph are due to low amount of reviews and the disagreements between reviewers
 
-# FIND error of line, r-squared
 
 # FIND the least amount of disagreements by filtering the SD for each observation. Smaller deviation = less disagreement
 # filter(sd between(0, 0.25), name_count >=5)
@@ -646,7 +645,7 @@ beer_reviews_sd_filter =
          between(aroma_sd, 0, 0.30), 
          between(appearance_sd, 0, 0.30), 
          between(palate_sd, 0, 0.30)) %>%
-  arrange() %>%
+  arrange(overall_sd, taste_sd, aroma_sd, appearance_sd, palate_sd) %>%
   print(n = 20)
 
 
