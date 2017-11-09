@@ -208,13 +208,13 @@ glimpse(beer_name_df)
 # filter reviewed amount 
 beer_review_amount_df = 
   beer_reviews %>%
-  group_by(beer_name, beer_style) %>%
+  group_by(beer_name, general_beer_style) %>%
   summarise(reviewed_amount = n()) %>%
   arrange(desc(reviewed_amount)) %>%
   filter(reviewed_amount <= 250)
 
-ggplot(beer_review_amount_df, aes(x = reviewed_amount, fill = beer_style)) + 
-  geom_histogram(binwidth = 1)
+ggplot(beer_review_amount_df, aes(x = reviewed_amount, fill = general_beer_style)) + 
+  geom_histogram(binwidth = 10, position = 'dodge')
 
 glimpse(beer_name_filter)
 
@@ -466,7 +466,7 @@ var(abv_vector)    # 5.16
 
 one_sd_below = mean(abv_vector) - sd(abv_vector) # 4.77 -> 1 SD below mean
 one_sd_above = mean(abv_vector) + sd(abv_vector) # 9.31 -> 1 SD above mean
-2*sd(abv_vector) 
+mean(abv_vector) - 2*sd(abv_vector) 
 
 ?table
 ?cut
@@ -482,6 +482,14 @@ interval2= cut_interval(as.integer(interval), length = sd(abv_vector)*2)
 table(interval2)
 class(interval)
 length(interval2)
+
+# Interval of ABV
+# use cut() and a vector within the breaks
+breaks_vect = c()
+interval = cut(abv_vector, breaks = c(0, mean(abv_vector) - 2*sd(abv_vector), one_sd_below, mean(abv_vector), 
+                                       one_sd_above, mean(abv_vector) + 2*one_sd_above, 60 ))
+table(interval)
+
 
 # NEW COLUMN: beer_abv_interval
 beer_reviews %>%
