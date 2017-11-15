@@ -1,0 +1,277 @@
+---
+title: 'Capstone Project: Data Wrangling Report'
+author: "Sergey Mouzykin"
+date: "November 2, 2017"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+Your raw data needs to be cleaned and wrangled into a form you can analyze. Here are a few suggested steps:
+
+* Clean up your column names to be simple, short and descriptive
+* For each column:
+    - Check for missing values and decide what you want to do about them.
+    - Make sure the values in each column make sense. If you find values that don't, decide what you want to do about those.
+    - Look for outliers (values that are too small or too large). Do they make sense? Do you want to keep them in the data set?
+    - Discuss with your mentor about other data wrangling steps you might need to perform for your specific problem and implement those.
+    - Save your cleaned up and transformed data set.
+
+### Overview 
+This raw data will be cleaned and wrangled into a form which then can be analyzed. The following will be performed:
+
+- Column names will be renamed to be short, simple and descriptive.
+- All columns with characters will be changed to lower case. this includes brewery name, beer name, beer style, and profile name.
+- Any missing values found will be replaced accordingly
+- The amount of beer styles will be reduced from 104 to a more manageable size
+
+```{r Library and data frame, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(dplyr)
+beer_reviews <- read_csv("beer_reviews_original.csv")
+beer_reviews = as_data_frame(beer_reviews)
+```
+
+### Lower Case
+Change all columns with characters to lower case. This includes brewery name, beer name, profile name, and beer style. 
+
+### Rename Columns
+Some columns need to be renamed in order to be more concise.
+
+|Old Name|New Name|
+|----|----|
+|review_overall| overall
+|review_aroma| aroma
+|review_appearance| appearance 
+|review_palate| palate
+|review_taste| taste
+|review_profilename| profile_name
+|brewery_name| *no change*
+|brewery_id| *no change*
+|beer_style| *no change*
+|beer_name| *no change*
+|beer_abv| *no change*
+|beer_id| *no change*
+|review_time| *no change*
+
+```{r Lower Case and Rename, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# ---- Lower Case ----
+brewery_name  = tolower(beer_reviews$brewery_name)
+beer_name     = tolower(beer_reviews$beer_name)
+profile_name  = tolower(beer_reviews$review_profilename)
+beer_style    = tolower(beer_reviews$beer_style)
+# ---- Rename Columns ----
+taste       = beer_reviews$review_taste
+palate      = beer_reviews$review_palate
+appearance  = beer_reviews$review_appearance
+aroma       = beer_reviews$review_aroma
+overall     = beer_reviews$review_overall
+brewery_id  = beer_reviews$brewery_id
+beer_id     = beer_reviews$beer_beerid
+review_time = beer_reviews$review_time
+beer_abv    = beer_reviews$beer_abv
+
+beer_reviews = data_frame(brewery_name, beer_name, profile_name, beer_style, taste, palate, 
+                          appearance, aroma, overall, brewery_id, beer_id, review_time, beer_abv)
+
+```
+
+### Finding Missing Values
+Approach:
+
+1. Create a function for finding missing values 
+2. Iterate this function over every column 
+3. Create a matrix of missing values for easier visualization
+
+```{r Missing Values, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+find_NA = function(column_name){
+  beer_reviews %>% 
+    filter(is.na(column_name)) %>%
+    summarise(missing_values = n())
+}
+
+columns_name = list(
+  beer_reviews$beer_id,
+  beer_reviews$brewery_name,
+  beer_reviews$brewery_id,
+  beer_reviews$beer_abv,
+  beer_reviews$profile_name,
+  beer_reviews$taste,
+  beer_reviews$palate,
+  beer_reviews$beer_style,
+  beer_reviews$appearance,
+  beer_reviews$aroma,
+  beer_reviews$overall,
+  beer_reviews$review_time,
+  beer_reviews$beer_name
+)
+missing_vals = sapply(columns_name, find_NA)
+
+# matrix of missing values
+columns = c('beer id', 'brewery name', 'brewery id', 'beer ABV', 'profile name', 'review taste', 'review palate', 'beer style',
+            'review appearance', 'review aroma', 'review overall', 'review time', 'beer name')
+rows = c('missing values')
+missing_matrix = matrix(missing_vals, byrow = TRUE, nrow = 1)
+colnames(missing_matrix) = columns
+rownames(missing_matrix) = rows
+missing_matrix
+```
+Missing values are found in the following columns: 
+
+|Column|Amount of missing values|
+|----|----|
+|brewery name| 15
+|beer ABV| 67,785
+|profile name| 348 
+
+The alcohol content is not always written on the container and relatively low ABV is not required to be printed on containers. This may explain the large amount of missing values in the beer_abv column. 
+
+### Missing Values: beer ABV (alcohol by volume)
+To deal with these missing values, the mean of the beer_abv will be computed and used to replace the missing values. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result. 
+
+```{r ABV and mean, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+mean_abv = mean(beer_reviews$beer_abv, na.rm = TRUE)
+median_abv = median(beer_reviews$beer_abv, na.rm = TRUE)
+mean_abv # = 7.04
+median_abv # 6.6
+# replace the missing values in ABV with the mean
+beer_reviews = 
+  beer_reviews %>%
+  replace_na(list(beer_abv = mean_ABV))
+# check for missing values again
+find_NA(beer_reviews$beer_abv)
+# find max and min for beer ABV
+# replace the missing values before finding MAX and MIN
+max(beer_reviews$beer_abv) # 57.7 % 
+min(beer_reviews$beer_abv) # 0.01 % 
+```
+
+
+### Missing Values: Brewery Name
+At the moment, we can't make any accurate guesses as to what the names are of the breweries. Therefore their missing values will be replaced with the string 'unknown'. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result. 
+
+```{r Brewery Name, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# view the matrix with missing values
+missing_matrix
+# look at the missing brewery names and their corresponding profile name and ABV
+# from beer_reviews, select 3 columns, brewery name, profile name, and beer ABV
+beer_reviews %>%
+  select(brewery_name, profile_name, beer_abv) %>%
+  filter(is.na(brewery_name))
+# replace the missing names with 'unknown'
+beer_reviews = 
+  beer_reviews %>%
+  replace_na(list(brewery_name = 'unknown'))
+# check for missing values again
+find_NA(beer_reviews$brewery_name)
+```
+
+### MISSING VALUES: Profile Name
+Profile names will be replaced with the string 'unknown' since we can't make any accurate guess of somebody's name in this instance.
+
+```{r Profile Name, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# view the matrix with missing values
+missing_matrix
+
+beer_reviews %>%
+  select(brewery_name, profile_name, beer_abv) %>%
+  filter(is.na(profile_name))
+
+# replace the missing profile names with 'Unknown'
+beer_reviews_clean = 
+  beer_reviews %>%
+  replace_na(list(profile_name = 'unknown'))
+
+# check for missing values again
+find_NA(beer_reviews_clean$profile_name)
+
+```
+
+
+### BEER STYLES
+Currently, there are 104 unique beer styles included in this data set. The goal is to reduce them into more general names in order to produce plots that are easy to read and translate. A new column will be created to represent these styles. 
+
+NEW BEER-STYLE COLUMN
+
+# CONSIDER sorting by country of origin: BELGIUM, UK, US, GERMANY
+# create new column for the reduced beer styles
+# New Beer Styles: 
+
+* ale
+* lager
+* stout
+* pilsner
+* porter
+* wheat
+* bock
+* lambic
+* smoked
+* barleywine
+* bitter
+* rye
+* spiced
+* trappist
+* ipa
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+styles = select(beer_reviews, beer_style)
+# create a list of beer styles to use within 'gsub'
+style_list =  
+  c(beer_reviews %>%
+      select(beer_style))
+
+style_list = unlist(style_list)
+ale         = gsub(pattern = '.*ale.*|^alt.*|.*winter.*|.*garde$|^k.*lsch.*',          replacement = 'ale',           x = style_list)
+lager       = gsub(pattern = '.*lager.*|^schwarz.*|^m.*rzen.*|.*steam.*|.*zwickel.*',  replacement = 'lager',         x = ale)
+stout       = gsub(pattern = '.*stout.*',                                              replacement = 'stout',         x = lager)
+pils        = gsub(pattern = '.*pils.*',                                               replacement = 'pilsner',       x = stout)
+porter      = gsub(pattern = '.*porter.*',                                             replacement = 'porter',        x = pils)
+wheat       = gsub(pattern = '.*weizen.*|.*wit.*|.*weiss.*|.*gose.*',                  replacement = 'wheat',         x = porter)
+bock        = gsub(pattern = '.*bock.*',                                               replacement = 'bock',          x = wheat)
+lambic      = gsub(pattern = '^lambic.*|.*faro.*|.*gueuze.*',                          replacement = 'lambic',        x = bock)
+smoked      = gsub(pattern = '^smoked.*|^rauch.*',                                     replacement = 'smoked',        x = lambic)
+barleywine  = gsub(pattern = '.*barleywine.*',                                         replacement = 'barleywine',    x = smoked)
+bitter      = gsub(pattern = '.*bitter.*',                                             replacement = 'bitter',        x = barleywine)
+rye         = gsub(pattern = '.*rye.*|.*roggen.*|kvass',                               replacement = 'rye',           x = bitter)
+spiced      = gsub(pattern = '.*herbed.*|.*braggot.*|^chile.*',                        replacement = 'spiced/herbed', x = rye)
+trappist    = gsub(pattern = '^quad.*|^dub.*|^tri.*',                                  replacement = 'trappist',      x = spiced)
+ipa         = gsub(pattern = '.*ipa.*',                                                replacement = 'ipa',           x = trappist)
+
+style_list_mod = ipa
+unique(style_list_mod)
+length(unique(style_list_mod))
+```
+
+### 
+
+```{r Mutate and Summarize, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# create new column with the new styles using mutate()
+beer_reviews = 
+  beer_reviews %>%
+  mutate(general_beer_style = style_list_mod)
+
+glimpse(beer_reviews)
+
+# summarize the new beer styles by calling distinct()
+beer_reviews %>%
+  group_by(general_beer_style) %>%
+  summarise(style_count = n()) %>%
+  arrange(desc(style_count))
+
+```
+
+### Write the cleaned data to a new file
+```{r Write Cleaned Data, eval=FALSE, include=FALSE}
+beer_reviews_clean = beer_reviews
+glimpse(beer_reviews_clean)
+
+# write the clean file 
+write_csv(beer_reviews_clean, 'beer_reviews_clean.csv')
+```
+
+
+
+
