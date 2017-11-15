@@ -7,7 +7,7 @@ output:
   pdf_document: default
   word_document: default
 ---
-
+ new comment 
 Your raw data needs to be cleaned and wrangled into a form you can analyze. Here are a few suggested steps:
 
 * Clean up your column names to be simple, short and descriptive
