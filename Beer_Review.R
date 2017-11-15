@@ -8,9 +8,9 @@ glimpse(beer_reviews)
 head(beer_reviews)
 
 
-# *** Consider reducing the (104) beer styles to more general styles (Ale, Lager, Stout, Pilsner... )
 # *** shape = 1 - hollow circle
 # *** try filtering by profile name to see reviews of a single reviewer and then plot results
+# CLEAN UP beer names and brewery columns for unsual characters, ",<ff>, <fe>, 
 
 # ------ PLOTTING ------
 # Exploratory Analysis
@@ -120,43 +120,105 @@ find_NA(beer_reviews$beer_abv)
 
 # --- Missing Values: profile name
 
-# find max and min for beer ABV
-# replace the missing values before finding MAX and MIN
-max(beer_reviews$beer_abv)
-min(beer_reviews$beer_abv)
-
-# amount of beer with ABV over 20%
-beer20 = 
-  beer_reviews %>%
-  select(beer_abv) %>%
-  filter(beer_abv >= 20)
-beer20
 
 # ------ SUMMARY STATISTICS ------
 
 # ------ BREWERY NAME ------
-# NOTE: some brewery names have characters that can be removed 
-glimpse(beer_reviews)
+# NOTE: some brewery names have characters that can be removed such as: "", \\, <>
 beer_reviews %>%
   group_by(brewery_name) %>%
   summarise(brewery_count = n()) %>%
-  #arrange(desc(brewery_count)) %>%
+  arrange(desc(brewery_count)) %>%
   print(n = 20)
 
+# CLEAN UP: Brewery Name column
+brewery_name_list = beer_reviews$brewery_name
+brew_name_ind_vect = grep('<ff>|<fe>|"|u008', brewery_name_list, value = TRUE)
+length(brew_name_ind_vect)
+brew_sub = gsub('<ff>|<fe>|"|u008', '', brewery_name_list)
+length(brew_sub)
+brew_check = grep('<ff>|<fe>|"|u008', brew_sub)
+length(brew_check)
+# in the data frame, insert the new clean column
+glimpse(beer_reviews)
+
+beer_reviews$brew_sub = beer_reviews$brewery_name
+glimpse(brew_sub)
+length(grep('<ff>|<fe>|"|u008', beer_reviews$brewery_name))
+
+clean_brew = function(column_name){
+  column_name
+  brew_name_ind_vect = grep('<ff>|<fe>|"|u008', column_name)
+  
+  if(length(brew_name_ind_vect) > 0){
+    print(paste('Found', length(brew_name_ind_vect), 'items. Working...'))
+    brew_sub = gsub('<ff>|<fe>|"|u008', '', brewery_name_list)
+    print('Done!')
+    
+  } else if(length(brew_name_ind_vect) < 1) {
+    print('All clear!')
+  }
+}
+clean_brew(brewery_name)
+
+
+# CLEAN UP: Beer Name column
+# use grep() and length() to find the beer names in question
+beer_name_list = beer_reviews$beer_name
+beer_name_ind_vec = grep('<ff>|<fe>|"|u008', beer_name_list)
+length(beer_name_ind_vec)
+beer_name_ind_vec[1:50]
+# use gsub() to search for the characters and replace them with nothing/emptry string
+re_beer_name = gsub('<ff>|<fe>|"|u008', '', beer_name_list)
+length(re_beer_name)
+re_beer_name[1:50]
+
+?replace
+# use the grep() index vector to use within replace() 
+beer_name_ind_vec = grep('<ff>|<fe>|"|u008', beer_name_list)
+length(beer_name_ind_vec)
+re = replace(beer_name_list, beer_name_ind_vec, re_beer_name)
+length(re)
+glimpse(re)
+# replace the existing column with the cleaned version
+re = beer_reviews$beer_name
+
+# check the cleaned column. Will be zero if successfull
+beer_name_ind_vec = grep('<ff>|<fe>|"|u008', re)
+length(beer_name_ind_vec)
+
+# replace the 
+beer_reviews = 
+  beer_reviews %>%
+  replace(list = beer_name_vect, values = re_beer_name)
+  
+glimpse(beer_reviews)
+beer_reviews %>%
+  select(beer_name) %>%
+  matches('<ff>|<fe>|"|u008', vars = beer_name)
+  print(n = 50)
+
+
+
+
+
+
 # distinct amount of breweries and the amount of times they appear in the data set
+# 
 brewery_df = 
   beer_reviews %>%
   group_by(brewery_name) %>%
-  summarise(brewery_count = n(), ovr_mean = mean(overall)) %>%
+  summarise(review_count = n(), ovr_mean = mean(overall), overall_sd = sd(overall)) %>%
   arrange(desc(ovr_mean)) %>%
-  filter(between(brewery_count, 10, 20)) %>%
+  filter(between(review_count, 3, 50), between(ovr_mean, 4.30, 5.0)) %>%
   print(n = 20)
   
-  
+
 # rate the breweries
 breweries_list = list(brewery_df$brewery_count)
-stats_function = function(DF, VECT = NULL){
+stats_function = function(DF, col_name){
   # DF has to be a list
+  DF = list(DF)
   sd_list   = lapply(DF, sd)
   var_list  = lapply(DF, var)
   mean_list = lapply(DF, mean)
@@ -164,15 +226,14 @@ stats_function = function(DF, VECT = NULL){
   max_list = lapply(DF, max)
   min_list = lapply(DF, min)
   yy = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
-  
   rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
-  columns = c('breweries')
+  columns = c(col1 = col_name)
   sd_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
   colnames(sd_matrix) = columns
   rownames(sd_matrix) = rows
   sd_matrix
 }
-stats_function(breweries_list)
+stats_function(brewery_df$review_count, 'brewery stats')
 
 
 
@@ -182,20 +243,39 @@ stats_function(breweries_list)
 
 
 # ------ BEER NAMES ------
+# find characters to remove from beer_names: \,"
 # find beers with least amount of reviews
 beer_name_df = 
   beer_reviews %>%
-  group_by(beer_name) %>%
-  summarise(review_count = n(), 
-            overall_sd = sd(overall),
-            taste_sd = sd(taste)) %>%
-  arrange(overall_sd) #%>%
-  #filter(between())
+  group_by(beer_name, general_beer_style) %>%
+  summarise(review_count = n()) %>%
+  print(n = 20)
 beer_name_df
 sd(beer_name_df$review_count)
 median(beer_name_df$overall)
 mean(beer_name_df$overall)
 sd(beer_name_df$overall)
+
+review_count = list(beer_name_df$review_count)
+stats_function = function(DF, VECT = NULL){
+  # DF has to be a list
+  DF = list(DF)
+  sd_list   = lapply(DF, sd)
+  var_list  = lapply(DF, var)
+  mean_list = lapply(DF, mean)
+  median_list = lapply(DF, median)
+  max_list = lapply(DF, max)
+  min_list = lapply(DF, min)
+  yy = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
+  rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
+  columns = c(col1 = 'col 1')
+  sd_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
+  colnames(sd_matrix) = columns
+  rownames(sd_matrix) = rows
+  sd_matrix
+}
+stats_function(beer_name_df$review_count)
+
 
 # max, min, and mean
 max(beer_name_df$review_count) # = 3290
@@ -255,11 +335,6 @@ beer_reviews %>%
 
 
 # create a list of beer styles to use within 'grep'
-style_list =  
-  c(beer_reviews %>%
-  select(beer_style) %>%
-  distinct())
-
 style_list = unlist(style_list)
 class(style_list)
 glimpse(style_list)
@@ -277,9 +352,6 @@ ale_count = matches(match = '.*ale.*', vars = beer_name_list)
 ale_count = contains(match = 'ale', vars = beer_name_list)
 glimpse(ale_count)
 length(ale_count)
-
-
-
 
 # ALE
 # IPA will grouped with ALE since it is considered to be an ALE
@@ -474,20 +546,14 @@ mean(abv_vector) - 2*sd(abv_vector)
 ?cut_interval
 ?cut_width
 # ---- * INTERVAL ----
-interval = cut_interval(abv_vector, n = NULL, length = sd(abv_vector)*4, labels = c('low', 'below normal', 'normal',
-                                                                                    'above normal', 'high'))
-interval = cut_interval(abv_vector, n = NULL, length = sd(abv_vector))
-table(interval)
-interval2= cut_interval(as.integer(interval), length = sd(abv_vector)*2)
-table(interval2)
-class(interval)
-length(interval2)
-
 # Interval of ABV
 # use cut() and a vector within the breaks
+# normal ABV level will be considered being within 1 SD of the mean
 breaks_vect = c()
-interval = cut(abv_vector, breaks = c(0, mean(abv_vector) - 2*sd(abv_vector), one_sd_below, mean(abv_vector), 
-                                       one_sd_above, mean(abv_vector) + 2*one_sd_above, 60 ))
+interval = cut(abv_vector, 
+               breaks = c(0, mean(abv_vector) - 2*sd(abv_vector), one_sd_below, mean(abv_vector), 
+                                       one_sd_above, mean(abv_vector) + 2*one_sd_above, 60 ), 
+               labels = c('low', 'below normal', 'normal', 'above normal', 'high'))
 table(interval)
 
 
@@ -497,14 +563,8 @@ beer_reviews %>%
   select(beer_abv_interval, beer_abv)
   filter(beer_abv >= 15) %>%
   arrange(desc(beer_abv))
-
 glimpse(beer_reviews)
 
-# normal ABV level will be considered being within 1 SD of the mean
-interval_cut = cut_number(abv_vector, n = 2*sd(abv_vector), width = 1, length = sd(abv_vector)) # labels = c('low', 'below normal', 'normal', 'above normal', 'high')
-table(interval_cut)
-interval_cut_width = cut_width(abv_vector, width = 2*sd(abv_vector), center = mean(abv_vector), closed = c('left'))
-table(interval_cut_width)
 
 
   
@@ -822,7 +882,7 @@ review_time =
 glimpse(review_time)
 min(review_time$review_time) # MIN: the beer with the least reviews = 840,672,001
 max(review_time$review_time) # MAX: the beer with the most reviews = 1,326,285,348
-
+stats_function(review_time$review_time)
 
 # ------ REVIEW TIME ??? ------
 # MAX: the beer with the most reviews = 1,326,285,348
@@ -838,3 +898,7 @@ beer_reviews %>%
   group_by(review_time) %>%
   summarise(n = n()) %>%
   arrange(desc(n))
+
+beer_reviews %>%
+  group_by(review_time) %>%
+  n_distinct()

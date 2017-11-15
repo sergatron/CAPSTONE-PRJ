@@ -39,7 +39,7 @@ beer_reviews = as_data_frame(beer_reviews)
 Change all columns with characters to lower case. This includes brewery name, beer name, profile name, and beer style. 
 
 ### Rename Columns
-Some columns need to be renamed in order to be more concise.
+Some columns need to be renamed in order to be more concise. The changes are summarized in the table below. 
 
 |Old Name|New Name|
 |----|----|
@@ -151,7 +151,7 @@ min(beer_reviews$beer_abv) # 0.01 %
 
 
 ### Missing Values: Brewery Name
-At the moment, we can't make any accurate guesses as to what the names are of the breweries. Therefore their missing values will be replaced with the string 'unknown'. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result. 
+At the moment, we can't make any accurate guesses as to what the names are of the breweries. Therefore their missing values will be replaced with the string '*unknown*'. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result. 
 
 ```{r Brewery Name, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # view the matrix with missing values
@@ -169,8 +169,8 @@ beer_reviews =
 find_NA(beer_reviews$brewery_name)
 ```
 
-### MISSING VALUES: Profile Name
-Profile names will be replaced with the string 'unknown' since we can't make any accurate guess of somebody's name in this instance.
+### Missing Values: Profile Name
+Profile names will be replaced with the string '*unknown*' since we can't make any accurate guess of somebody's name in this instance.
 
 ```{r Profile Name, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # view the matrix with missing values
@@ -191,14 +191,10 @@ find_NA(beer_reviews_clean$profile_name)
 ```
 
 
-### BEER STYLES
+### Beer Styles
 Currently, there are 104 unique beer styles included in this data set. The goal is to reduce them into more general names in order to produce plots that are easy to read and translate. A new column will be created to represent these styles. 
 
-NEW BEER-STYLE COLUMN
-
-# CONSIDER sorting by country of origin: BELGIUM, UK, US, GERMANY
-# create new column for the reduced beer styles
-# New Beer Styles: 
+New Beer-Style column will consist of the following styles: 
 
 * ale
 * lager
@@ -216,7 +212,7 @@ NEW BEER-STYLE COLUMN
 * trappist
 * ipa
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r Beer Styles, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 styles = select(beer_reviews, beer_style)
 # create a list of beer styles to use within 'gsub'
 style_list =  
@@ -245,7 +241,6 @@ unique(style_list_mod)
 length(unique(style_list_mod))
 ```
 
-### 
 
 ```{r Mutate and Summarize, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # create new column with the new styles using mutate()
@@ -263,7 +258,11 @@ beer_reviews %>%
 
 ```
 
+### Outliers
+
+
 ### Write the cleaned data to a new file
+The clean file is now ready to be written.
 ```{r Write Cleaned Data, eval=FALSE, include=FALSE}
 beer_reviews_clean = beer_reviews
 glimpse(beer_reviews_clean)
