@@ -1,3 +1,3 @@
 # CAPSTONE-PRJ
 
-Casptone related projects are contained within this repository
+All capstone material will inhabit and mingle in this section 
