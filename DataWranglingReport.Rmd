@@ -1,11 +1,11 @@
 ---
 title: 'Capstone Project: Data Wrangling Report'
 author: "Sergey Mouzykin"
-date: "November 17, 2017"
+date: "November 21, 2017"
 output:
-  word_document: default
-  pdf_document: default
   html_document: default
+  pdf_document: default
+  word_document: default
 ---
 ### Overview 
 This raw data will be cleaned and wrangled into a form which then can be analyzed. The following will be performed:
@@ -27,17 +27,19 @@ library(RColorBrewer)
 ```{r Data Frame, message=FALSE, warning=FALSE, include=FALSE}
 beer_reviews <- read_csv("beer_reviews_original.csv")
 beer_reviews = as_data_frame(beer_reviews)
+
 ```
 
 ### Lower Case
 Change all columns with characters to lower case. This includes four columns, brewery name, beer name, profile name, and beer style. 
 
-```{r Lower Case, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Lower Case, message=FALSE, warning=FALSE, include=FALSE}
 # ---- Lower Case ----
 brewery_name  = tolower(beer_reviews$brewery_name)
 beer_name     = tolower(beer_reviews$beer_name)
 profile_name  = tolower(beer_reviews$review_profilename)
 beer_style    = tolower(beer_reviews$beer_style)
+
 ```
 
 ### Rename Columns
@@ -59,7 +61,7 @@ Some columns need to be renamed in order to be more concise. The changes are sum
 |beer_id| *no change*
 |review_time| *no change*
 
-```{r Lower Case and Rename, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Lower Case and Rename, message=FALSE, warning=FALSE, include=FALSE}
 # ---- Rename Columns ----
 taste       = beer_reviews$review_taste
 palate      = beer_reviews$review_palate
@@ -186,14 +188,14 @@ brewing process, ingredient ratios, yeast type, or a combination of other factor
 
 New Beer-Style column will consist of the following styles: 
 
-|Beer Styles to be Added|
+|Beer Style| | | | |
 |----|----|----|----|----|
 | ale | lager | stout | lambic | spiced | 
 | pilsner | porter | smoked | barleywine | ipa |
 | wheat | bock | bitter | rye | trappist |
 
 
-```{r Beer Styles, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Beer Styles, message=FALSE, warning=FALSE, include=FALSE}
 # create a list of beer styles to use within 'gsub'
 style_list =  c(beer_reviews %>% select(beer_style))
 
@@ -272,7 +274,7 @@ min(beer_reviews$beer_abv) # 0.01 %
 ### Interval: Beer ABV
 In order to better visualize the alcohol level content, the ABV can be distributed into five factored levels using the calculated mean and standard deviation. These five levels will be labeled as, 'low', 'below normal', 'normal', 'above normal', and 'high'. The computed standard deviation will be used to create the breaks for the labels. 
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 
 abv_vector = beer_reviews$beer_abv
 mean_abv   = mean(abv_vector)   # 7.04
@@ -316,7 +318,7 @@ glimpse(beer_reviews)
 
 ### Write the cleaned data to a new file
 The clean file is now ready to be written.
-```{r Write Cleaned Data, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Write Cleaned Data, message=FALSE, warning=FALSE, include=FALSE}
 beer_reviews_clean = beer_reviews
 glimpse(beer_reviews_clean)
 
