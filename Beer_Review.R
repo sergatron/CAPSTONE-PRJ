@@ -2,10 +2,16 @@ library(ggplot2)
 library(readr)
 library(tidyr)
 library(dplyr)
+library(tibble)
+library(RColorBrewer)
+library(ggthemes)
+library(GGally)
 beer_reviews <- read_csv("beer_reviews_clean.csv")
 beer_reviews = as_data_frame(beer_reviews)
 glimpse(beer_reviews)
 head(beer_reviews)
+
+
 
 
 # *** shape = 1 - hollow circle
@@ -14,8 +20,8 @@ head(beer_reviews)
 
 # ------ PLOTTING ------
 # Exploratory Analysis
-# reduce the amount of data points
-reviews_10k = sample_n(beer_reviews, size = 10000)# head(beer_reviews, n = 10000)
+# reduce the amount of data points with the sample_n()
+reviews_10k = sample_n(beer_reviews, size = 10000)
 glimpse(reviews_10k)
 
 # --- Point Plot
@@ -24,19 +30,39 @@ ggplot(reviews_10k, aes(x = overall, y = beer_abv, col = general_beer_style)) +
   geom_point(alpha = 0.3) +
   geom_jitter()
 
+# filter out Lager in particular with its respective ABV, and ratings
+# plot Lager overall ratings vs. the ABV
+
 # --- Point Plot
 # OVR_rating vs. beer ABV, colored by beer style
-ggplot(reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv)) + 
+ggplot(reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
   geom_point(alpha = 0.1, shape = 21) +
   geom_jitter()
 
-# --- Histogram Plot
-# overall and beer style
-ggplot(reviews_10k, aes(x = overall, fill = general_beer_style)) + 
-  geom_histogram(binwidth = 10, position = 'dodge') 
+# ------ Histogram Plot -------
+# Overall Rating Distribution
+ggplot(reviews_10k, aes(x = overall)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = beer_abv_factor) +
+  theme_blue
 
-# --- Bar Plot
-# overall and beer style
+ggplot(reviews_10k, aes(x = taste)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge') +
+  theme_classic()
+
+ggplot(reviews_10k, aes(x = aroma)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge') +
+  theme_classic()
+
+ggplot(reviews_10k, aes(x = appearance)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge') +
+  theme_classic()
+
+ggplot(reviews_10k, aes(x = palate)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge') +
+  theme_classic()
+
+# ------ Bar Plot ------
+# overall rating distribution
 ggplot(reviews_10k, aes(x = overall, fill = general_beer_style)) + 
   geom_bar(position = 'dodge') 
 
@@ -44,22 +70,19 @@ ggplot(reviews_10k, aes(x = overall, fill = general_beer_style)) +
 
 # ------ LOWER CASE ------
 # change all text to lower case
-beer_reviews %>%
-  select(beer_name) %>%
-  tolower() # *** NOTE: do not run. Takes tooooo long and crashes.
+#beer_reviews %>%
+#  select(beer_name) %>%
+#  tolower() # *** NOTE: do not run. Takes tooooo long and crashes.
 
-sample_N = sample_n(beer_reviews, size = 500)
-lower_Case = 
-  sample_N %>%
-  select(beer_name, brewery_name, beer_style, profile_name) %>%
-  tolower
+#sample_N = sample_n(beer_reviews, size = 500)
+#lower_Case = 
+#  sample_N %>%
+#  select(beer_name, brewery_name, beer_style, profile_name) %>%
+#  tolower
 
 class(lower_Case)
 # ***NOTE: do not use DPLYR combined with tolower(). The data frame will be converted into character 
 # Change each column to lower case individually 
-
-sample_N$brewery_name
-glimpse(lower_Case)
 
 
 
@@ -71,6 +94,7 @@ find_NA = function(column_name){
     filter(is.na(column_name)) %>%
     summarise(missing_values = n())
 }
+find_NA(brewery_name)
 
 columns_name = list(
                 beer_reviews$beer_beerid,
@@ -132,6 +156,7 @@ beer_reviews %>%
   print(n = 20)
 
 # CLEAN UP: Brewery Name column
+# mutate
 brewery_name_list = beer_reviews$brewery_name
 brew_name_ind_vect = grep('<ff>|<fe>|"|u008', brewery_name_list, value = TRUE)
 length(brew_name_ind_vect)
@@ -205,16 +230,17 @@ beer_reviews %>%
 
 # distinct amount of breweries and the amount of times they appear in the data set
 # 
-brewery_df = 
+
+brewery_df =
   beer_reviews %>%
-  group_by(brewery_name) %>%
-  summarise(review_count = n(), ovr_mean = mean(overall), overall_sd = sd(overall)) %>%
-  arrange(desc(ovr_mean)) %>%
-  filter(between(review_count, 3, 50), between(ovr_mean, 4.30, 5.0)) %>%
-  print(n = 20)
-  
+  group_by(brewery_name, beer_name) %>%
+  summarise(review_count = n()) %>%
+  arrange(desc(review_count)) %>%
+  #filter(between(review_count, 1, 2)) %>%
+  print(n = 20)  
 
 # rate the breweries
+# try tibble() to construct a table instead of the matrix
 breweries_list = list(brewery_df$brewery_count)
 stats_function = function(DF, col_name){
   # DF has to be a list
@@ -234,7 +260,7 @@ stats_function = function(DF, col_name){
   sd_matrix
 }
 stats_function(brewery_df$review_count, 'brewery stats')
-
+stats_function_2(brewery_df$review_count, 'brewery stats')
 
 
 
@@ -243,7 +269,7 @@ stats_function(brewery_df$review_count, 'brewery stats')
 
 
 # ------ BEER NAMES ------
-# find characters to remove from beer_names: \,"
+# find characters to remove from beer_names: \,"<ff> <fe>
 # find beers with least amount of reviews
 beer_name_df = 
   beer_reviews %>%
@@ -251,30 +277,8 @@ beer_name_df =
   summarise(review_count = n()) %>%
   print(n = 20)
 beer_name_df
-sd(beer_name_df$review_count)
-median(beer_name_df$overall)
-mean(beer_name_df$overall)
-sd(beer_name_df$overall)
 
-review_count = list(beer_name_df$review_count)
-stats_function = function(DF, VECT = NULL){
-  # DF has to be a list
-  DF = list(DF)
-  sd_list   = lapply(DF, sd)
-  var_list  = lapply(DF, var)
-  mean_list = lapply(DF, mean)
-  median_list = lapply(DF, median)
-  max_list = lapply(DF, max)
-  min_list = lapply(DF, min)
-  yy = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
-  rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
-  columns = c(col1 = 'col 1')
-  sd_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
-  colnames(sd_matrix) = columns
-  rownames(sd_matrix) = rows
-  sd_matrix
-}
-stats_function(beer_name_df$review_count)
+stats_function_2(beer_name_df$review_count, 'Reviews Count')
 
 
 # max, min, and mean
@@ -294,7 +298,7 @@ beer_review_amount_df =
   filter(reviewed_amount <= 250)
 
 ggplot(beer_review_amount_df, aes(x = reviewed_amount, fill = general_beer_style)) + 
-  geom_histogram(binwidth = 10, position = 'dodge')
+  geom_histogram(binwidth = 30, position = 'dodge')
 
 glimpse(beer_name_filter)
 
@@ -302,6 +306,13 @@ glimpse(beer_name_filter)
 
 
 # ------ BEER STYLES ------
+
+beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(review_count = n()) %>%
+  arrange(desc(review_count)) %>%
+  print(n = 104)
+
 # print out beer names and their styles
 beer_reviews %>%
   group_by(beer_name, general_beer_style) %>%
@@ -311,10 +322,10 @@ beer_reviews %>%
   print(n = 15)
 
 
-# number of beer styles and the amount of times it was reviwed
+# calculate mean for each beer style
 beer_styles = 
   beer_reviews %>% 
-  group_by(beer_style, overall, beer_abv) %>%
+  group_by(beer_style, overall) %>%
   summarise(reviewed_amount = n()) %>%
   arrange(desc(reviewed_amount)) %>%
   filter(between(reviewed_amount, 20, 3000))
@@ -393,7 +404,7 @@ replace(style_list, lager, 'lager')
 
 
 # IPA
-ipa = grep(pattern = 'ipa', x = style_list, value = TRUE)
+ipa = grep(pattern = '.*ipa.*', x = style_list)
 ipa_list = style_list[ipa]
 glimpse(ipa_list)
 length(ipa)
@@ -521,42 +532,70 @@ beer_reviews_style =
   print(n = 25)
 
 # ------ STANDARD DEVIATION ------
-# ---- 2. Beer ABV Levels ----
 
-# Beer ABV 
-beer_reviews %>%
-  select(beer_abv, general_beer_style) %>%
-  print(n = 20)
 
+stats_function_2 = function(DF, col_name, summary = FALSE){
+  # DF has to be a list
+  if (summary == TRUE){
+    summary(DF)
+  }
+  else if(summary == FALSE){
+  DF = list(DF)  
+  sd_list     = lapply(DF, sd)
+  var_list    = lapply(DF, var)
+  mean_list   = lapply(DF, mean)
+  median_list = lapply(DF, median)
+  max_list    = lapply(DF, max)
+  min_list    = lapply(DF, min)
+  yy          = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
+  rows        = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
+  columns     = c(col1 = col_name)
+  sd_matrix   = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
+  colnames(sd_matrix) = columns
+  rownames(sd_matrix) = rows
+  sd_matrix
+  }
+  
+}
+stats_function_2(abv_vector, 'Beer ABV Summary')
+summary(abv_vector)
+
+# ---- ABV INTERVAL ----
+?tibble
 abv_vector = beer_reviews$beer_abv
 mean(abv_vector)   # 7.04
 median(abv_vector) # 6.6
 sd(abv_vector)     # 2.27
 var(abv_vector)    # 5.16
+length(abv_vector)
 
-
+stats_function_2(beer_reviews$beer_abv, 'Beer ABV')
 
 one_sd_below = mean(abv_vector) - sd(abv_vector) # 4.77 -> 1 SD below mean
 one_sd_above = mean(abv_vector) + sd(abv_vector) # 9.31 -> 1 SD above mean
-mean(abv_vector) - 2*sd(abv_vector) 
+two_sd_below = mean(abv_vector) - 2*sd(abv_vector) 
+two_sd_above = mean(abv_vector) + 2*sd(abv_vector)
 
 ?table
 ?cut
 ?cut_number
 ?cut_interval
 ?cut_width
-# ---- * INTERVAL ----
+
 # Interval of ABV
 # use cut() and a vector within the breaks
 # normal ABV level will be considered being within 1 SD of the mean
-breaks_vect = c()
+breaks_vect = c(0, two_sd_below, one_sd_below, one_sd_above, two_sd_above, 60)
 interval = cut(abv_vector, 
-               breaks = c(0, mean(abv_vector) - 2*sd(abv_vector), one_sd_below, mean(abv_vector), 
-                                       one_sd_above, mean(abv_vector) + 2*one_sd_above, 60 ), 
-               labels = c('low', 'below normal', 'normal', 'above normal', 'high'))
+               breaks = breaks_vect)
+               #labels = c('low', 'below normal', 'normal', 'above normal', 'high'))
 table(interval)
+# sum the amounts within two standard deviations and divide by total amount of rows
+# this will contain about 95% of all the data points in the beer's abv column
+(140735 + 1193157 + 200598) / length(abv_vector)
 
 
+glimpse(beer_reviews)
 # NEW COLUMN: beer_abv_interval
 beer_reviews %>%
   mutate(beer_abv_interval = interval2) %>%
@@ -569,7 +608,7 @@ glimpse(beer_reviews)
 
   
 
-# ---- 1. Beer Styles Popularity ----
+# ---- Beer Styles Popularity ----
 # Beer style SD
 beer_reviews_style =
   beer_reviews %>%
@@ -609,20 +648,25 @@ beer_reviews %>%
 
 
 
+# ---- BEER NAME: Summary Stats ----
 
-# ---- SUMMARISE the MEAN, SD, and VAR ----
-# for every beer style and beer name, 
+# for every beer style and beer name, summarize SD, VAR, MEAN, MEDIAN, MAX, MIN
+stats_function_2(beer_reviews$overall, 'Overall Rating Summary')
+stats_function_2(beer_reviews$taste, 'Taste Rating Summary')
+stats_function_2(beer_reviews$aroma, 'Aroma Rating Summary')
+stats_function_2(beer_reviews$appearance, 'Appearance Rating Summary')
+stats_function_2(beer_reviews$palate, 'Palate Rating Summary')
+
 beer_reviews_dist = 
   beer_reviews %>%
   #select(beer_name, overall) %>%
-  group_by(beer_name) %>%
-  summarise(beer_name_count = n()) %>%
-  arrange(desc(beer_name_count))
+  group_by(beer_name, overall, taste, aroma, appearance, palate) %>%
+  summarise(beer_name_count = n(), 
+            overall_mean = mean(overall), overall_sd = sd(overall)) %>%
+  arrange(overall) %>%
+  filter(overall == 0) %>%
+  print(n = 10)
 
-sd(beer_reviews_dist$beer_name_count)
-mean(beer_reviews_dist$beer_name_count)
-median(beer_reviews_dist$beer_name_count)
-var(beer_reviews_dist$beer_name_count)
 
 # tally each beer name and calculate SD for the 5 observations
 beer_reviews_SD = 
@@ -636,18 +680,83 @@ beer_reviews_SD =
             appearance_sd = sd(appearance), 
             palate_sd     = sd(palate)) %>%
   
-  filter(beer_name_count >= 5) %>%
+  #filter(beer_name_count >= 5) %>%
   arrange(overall_sd) %>%
-  #na.omit %>%
+  na.omit %>%
   print(n = 20)
 glimpse(beer_reviews_SD)
+
+beer_reviews_SD %>% 
+  filter(is.na(beer_name_count)) %>%
+  summarise(missing_values = n())
+
+stats_function_2(beer_reviews_SD$beer_name_count, 'Beer Review Count')
+
+
+# ---- GENERAL BEER STYLE: Summary Stats ----
+
+# tally each General_beer style and find SD
+beer_reviews_style_sd = 
+  beer_reviews %>%
+  group_by(general_beer_style) %>%
+  summarise(style_count = n(),
+            
+            overall_sd    = sd(overall), 
+            overall_mean  = mean(overall),
+            taste_sd      = sd(taste),
+            aroma_sd      = sd(aroma), 
+            appearance_sd = sd(appearance), 
+            palate_sd     = sd(palate)) %>%
+  
+  #filter(beer_name_count >= 5) %>%
+  arrange(overall_mean) %>%
+  na.omit %>%
+  print(n = 25)
+
+stats_function_2(beer_reviews_style_sd$style_count, 'Beer Style')
+stats_function_2(beer_reviews_style_sd$overall_sd, 'Beer Style')
+stats_function_2(beer_reviews_style_sd$aroma_sd, 'Beer Style')
+stats_function_2(beer_reviews_style_sd$taste_sd, 'Beer Style')
+stats_function_2(beer_reviews_style_sd$appearance_sd, 'Beer Style')
+stats_function_2(beer_reviews_style_sd$palate_sd, 'Beer Style')
+
+
+# ---- BEER STYLE: Summary Stats ----
+
+# tally each beer_style and find SD
+beer_reviews_style_sd2 = 
+  beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(style_count = n(),
+            
+            overall_sd    = sd(overall), 
+            overall_mean  = mean(overall),
+            taste_sd      = sd(taste),
+            aroma_sd      = sd(aroma), 
+            appearance_sd = sd(appearance), 
+            palate_sd     = sd(palate)) %>%
+  
+  #filter(beer_name_count >= 5) %>%
+  arrange(desc(overall_mean)) %>%
+  na.omit %>%
+  print(n = 50)
+
+
+# missing values are created because there are too few amount of reviews and therefore the SD cannot be calculated
+# missing values need to be omitted as a result
+stats_function_2(beer_reviews_SD$overall_sd, 'Overall SD')
+stats_function_2(beer_reviews_style_sd2$overall_mean, 'Overall Mean')
+stats_function_2(beer_reviews_SD$taste_sd, 'Taste SD')
+stats_function_2(beer_reviews_SD$aroma_sd, 'Aroma SD')
+stats_function_2(beer_reviews_SD$appearance_sd, 'Appearance SD')
+stats_function_2(beer_reviews_SD$palate_sd, 'Palate SD')
 
 
 # PLOT
 # overall_mean vs. overall_sd
-ggplot(beer_reviews_SD, aes(x = overall_sd, y = taste_sd, col = general_beer_style)) + 
-  #geom_point() + 
-  stat_smooth(method = 'loess', se = FALSE) +
+ggplot(beer_reviews_SD, aes(x = overall_sd, y = beer_name_count, col = general_beer_style)) + 
+  geom_point() + 
+  #stat_smooth(method = 'loess', se = FALSE) +
   #geom_jitter() + 
   #scale_x_continuous(limits = c(0,2)) + 
   #scale_y_continuous(limits = c(0,2)) + 
@@ -666,16 +775,14 @@ ggplot(beer_reviews_SD, aes(x = overall_sd, y = beer_name_count)) +
 # PLOT
 # overall_sd histogram
 ggplot(beer_reviews_SD, aes(x = overall_sd)) + 
-  geom_histogram(binwidth = 0.01) + 
+  geom_histogram(binwidth = 0.1, col = 'black') + 
+  scale_x_continuous('Overall Deviation', breaks = seq(0, 3.0, by = 0.2)) +
   theme_classic()
 
-
-min(beer_reviews_SD$overall_sd)
-max(beer_reviews_SD$overall_sd)
-mean(beer_reviews_SD$overall_sd)
-median(beer_reviews_SD$overall_sd)
-sd(beer_reviews_SD$overall_sd)
-
+ggplot(beer_reviews_SD, aes(x = taste_sd)) + 
+  geom_histogram(binwidth = 0.1, col = 'black') + 
+  scale_x_continuous('Taste Deviation', breaks = seq(0, 3.0, by = 0.2))
+  theme_classic()
 
 # NOTE: 
 # with only 1 or 2 reviews, disagreements vary greatly among the 5 observations
@@ -718,88 +825,184 @@ beer_reviews_sd_filter =
 
 
 
-# MATRIX for mean, sd, var
-?matrix
-observations_list = list(beer_reviews$overall, beer_reviews$aroma, 
-                         beer_reviews$appearance,beer_reviews$palate,
-                         beer_reviews$taste)
-stats_function = function(DF, VECT = NULL){
-  # DF can be a list of vectors
-  sd_list   = lapply(DF, sd)
-  var_list  = lapply(DF, var)
-  mean_list = lapply(DF, mean)
-  median_list = lapply(DF, median)
-  max_list = lapply(DF, max)
-  min_list = lapply(DF, min)
-  yy = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
-
-  rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
-  columns = c('overall', 'aroma', 'appearance', 'palate', 'taste')
-  sd_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
-  colnames(sd_matrix) = columns
-  rownames(sd_matrix) = rows
-  sd_matrix
-}
-stats_function(observations_list)
-
-
-
-
-
-# ---- PLOT: reduced beer styles ----
+# ---- PLOTS: themes ----
 # use gsub on beer_styles column and create a new column for a general beer style
 beer_reviews_5k = sample_n(beer_reviews, 5000)
 glimpse(beer_reviews)
+theme
+theme_pink <- theme(panel.background = element_blank(),
+                    legend.key = element_blank(),
+                    legend.background = element_blank(),
+                    strip.background = element_blank(),
+                    plot.background = element_rect(fill = 'pink', color = "black", size = 3),
+                    panel.grid = element_blank(),
+                    axis.line = element_line(color = "black"),
+                    axis.ticks = element_line(color = "black"),
+                    strip.text = element_text(size = 16, color = 'red'),
+                    axis.title.y = element_text(color = 'red', hjust = 0.5, face = "italic"),
+                    axis.title.x = element_text(color = 'red', hjust = 0.5, face = "italic"),
+                    plot.title = element_text(color = 'red', hjust = '0.5'),
+                    
+                    axis.text = element_text(color = "black"),
+                    legend.position = "none")
+?theme
+reds = brewer.pal(9, 'Reds')
+blues = brewer.pal(9, 'Blues')
+theme_blue = theme(panel.background = element_blank(),
+                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.position = 'right',
+                  legend.direction = 'vertical',
+                  strip.background = element_blank(),
+                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
+                  panel.grid = element_line(linetype = 8),
+                  axis.line = element_line(color = "#08519C"),
+                  axis.ticks = element_line(color = "#08519C"),
+                  axis.ticks.x = element_line(color = "black", size = 1),
+                  axis.ticks.y = element_line(color = "black", size = 1),
+                  strip.text = element_text(size = 16, color = 'red'),
+                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  plot.title = element_text(color = 'black', hjust = '0.5'),
+                  axis.text = element_text(color = "black"))
+
+
+# ------ PLOTTING ------
+
+# PLOT: Beer ABV distribution
+beer_reviews_10k = sample_n(beer_reviews, size = 10000)
+
+ggplot(beer_reviews_10k, aes(x = beer_abv)) + 
+  geom_histogram(binwidth = 0.5, position = 'dodge', fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 2)) +
+  scale_y_continuous('Beer Count') +
+  ggtitle('Beer ABV Distribution') +
+  theme_blue
+
+# PLOT: ABV and Style
+ggplot(beer_reviews_10k, aes(x = beer_abv, y = general_beer_style)) + 
+  geom_point() + 
+  geom_jitter()
 
 # HISTOGRAM
-ggplot(beer_reviews_5k, aes(x = beer_abv, fill = general_beer_style)) + 
-  geom_histogram(binwidth = 10, position = 'dodge', alpha = 0.6) +
-  scale_x_continuous(limits = c(1,20))
+ggplot(beer_reviews_10k, aes(x = beer_abv, fill = general_beer_style)) + 
+  geom_histogram(binwidth = 10, position = 'dodge', alpha = 0.4) 
+  #scale_x_continuous( breaks = seq(0, 60, by = 2)) +
+  #theme_blue
 
 ggplot(beer_reviews_5k, aes(x = as.factor(overall), fill = general_beer_style)) + # ??????????????????
   geom_histogram(binwidth = 15, stat = 'count') +
   #scale_x_continuous(limits = c(1,20)) + 
   theme_classic()
 
+# ABV factor and beer style
+ggplot(beer_reviews_5k, aes(x = beer_abv_factor, fill = general_beer_style)) + 
+  geom_histogram(stat = 'count', position = 'dodge') +
+  scale_x_discrete('Beer ABV') + 
+  theme_blue
 
-ggplot(beer_reviews_5k, aes(x = general_beer_style, fill = overall)) + 
-  geom_histogram(stat = 'count') +
-  scale_x_discrete('Beer Style') + 
-  theme_classic()
+
+
 
 
 # BAR GRAPH
 # beer style vs overall
 ggplot(beer_reviews_5k, aes(x = general_beer_style, y = overall, fill = general_beer_style)) + 
   geom_bar(stat = 'identity') +
-  scale_x_discrete('Beer Style',  expand = c(0, 0)) + 
-  theme_classic()
+  scale_x_discrete('Beer Style',  expand = c(0.1, 0)) 
+  #scale_y_discrete('Overall Rating', breaks = seq(0, 5, by = 1)) +
+  #theme_classic()
+
+# reduce the amount of data points with the sample_n()
+reviews_10k = sample_n(beer_reviews, size = 10000)
+glimpse(reviews_10k)
+
+# --- Point Plot
+# overall vs. beer ABV, colored by beer style
+ggplot(reviews_10k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
+  geom_point(alpha = 0.3) +
+  geom_jitter() +
+  theme_blue
+
+# filter out Lager in particular with its respective ABV, and ratings
+# plot Lager overall ratings vs. the ABV
+
+# --- Point Plot
+# Overall vs. Style, colored by beer style
+ggplot(reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
+  geom_point(alpha = 0.1, shape = 21) +
+  geom_jitter() + 
+  theme_blue
+# Overall and Beer ABV distribution
+ggplot(reviews_10k, aes(x = overall, fill = beer_abv_factor)) + 
+  geom_histogram(binwidth = 0.25) +
+  theme_blue
+# Overall and Beer Styles
+ggplot(reviews_10k, aes(x = overall, fill = general_beer_style)) + 
+  geom_histogram(binwidth = 0.25) +
+  theme_blue
+
+ggplot(reviews_10k, aes(x = beer_abv, y = general_beer_style, col = as.factor(overall))) + 
+  geom_point(alpha = 0.1, shape = 21) +
+  geom_jitter() + 
+  theme_blue
 
 
-# POINT 
+
+# ------ Histogram Plot -------
+# Overall Rating Distribution
+ggplot(reviews_10k, aes(x = overall)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(reviews_10k, aes(x = taste)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(reviews_10k, aes(x = aroma)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(reviews_10k, aes(x = appearance)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(reviews_10k, aes(x = palate)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+# ------ Bar Plot ------
+# overall rating distribution
+ggplot(reviews_10k, aes(x = overall, fill = general_beer_style)) + 
+  geom_bar(position = 'dodge') +
+  theme_blue
+
+
+# POINT PLOTS
 # overall vs. ABV
 ggplot(beer_reviews_5k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
   #geom_point(alpha = 0.3) +
   stat_smooth(method = 'loess', se = FALSE) +
   #geom_jitter() +
-  theme_classic()
+  theme_blue
   
 # overall vs. beer style
-ggplot(beer_reviews_5k, aes(x = overall, y = general_beer_style)) + 
+ggplot(beer_reviews_5k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
   geom_point(alpha = 0.3) +
   #stat_smooth(method = 'loess', se = FALSE) +
-  geom_jitter() +
-  theme_classic()
+  geom_jitter() 
+  #theme_blue
   
-ggplot(beer_reviews_5k, aes(x = overall, y = general_beer_style, col = beer_abv)) + 
+ggplot(beer_reviews_5k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
   geom_point(shape = 21, alpha = 0.6) + 
-  geom_jitter()  
+  geom_jitter()  +
   #stat_smooth(method = 'loess', se = FALSE)
-  
+  theme_blue
+
 # palate vs overall
-ggplot(beer_reviews_5k, aes(x = palate, y = overall, col = beer_abv)) + 
+ggplot(beer_reviews_5k, aes(x = palate, y = overall)) + 
   geom_point(alpha = 0.3) +
-  stat_smooth(method = 'loess', se = FALSE) + 
+  stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_classic()
   
@@ -815,22 +1018,7 @@ ggplot(beer_reviews_5k, aes(x = palate, y = overall, col = beer_abv)) +
 
 
 
-# create a new metric by calculating mean of all observations
-# number of overall = 5
-beer_reviews %>%
-  select(overall) %>%
-  filter(overall >= 5) 
-
-# overall ratings between 4 and 5 
-beer_reviews %>%
-  filter(between(review_overall, 4, 5))
-
-
-
-
-
-
-# ------ PROFILE NAMES ------
+# ------ PROFILE NAMES: Summary Stats ------
 # number of profile names
 beer_reviews %>% 
   select(profile_name) %>% 
@@ -845,17 +1033,18 @@ beer_reviews %>%
 profile_names = 
   beer_reviews %>% 
   group_by(profile_name) %>%
-  summarise(review_amount = n()) %>%
-  arrange(desc(review_amount)) #%>%
-  #filter(between(review_amount, 100,5900)) # amount of people with reviews in range: 100 <= review_amount < 5900
+  summarise(review_amount = n(),
+            profile_mean = mean(overall)) %>%
+  arrange(desc(review_amount)) %>%
+  
+  print(n = 20)
 profile_names # 33,388 total profile names
 glimpse(profile_names)
 
-max(profile_names$review_amount) # 5817
-min(profile_names$review_amount) # 1
-sum(profile_names$review_amount) # 1,586,614
-mean(profile_names$review_amount) # 47.52 reviews per person
-glimpse(profile_names)
+stats_function_2(profile_names$review_amount, 'Profile Name')
+stats_function_2(profile_names$profile_mean, 'Profile Name')
+
+
 
 # find lowest activity by filtering review amount 
 beer_reviews %>% 
@@ -873,15 +1062,22 @@ beer_reviews %>%
 # find: max and min review time/amount
 # find: largest amount of review times for beer style
 
+ggplot(beer_reviews_10k, aes(x = review_time, fill = overall)) + 
+  geom_histogram()
+
 # number of beers with the greatest amount of reviews and their respective beer styles
 review_time = 
   beer_reviews %>%
-  select(review_time) %>%
+  select(review_time, beer_name) %>%
   arrange(desc(review_time))
 
+beer_reviews %>%
+  group_by(review_time) %>%
+  distinct()
+
 glimpse(review_time)
-min(review_time$review_time) # MIN: the beer with the least reviews = 840,672,001
-max(review_time$review_time) # MAX: the beer with the most reviews = 1,326,285,348
+min(review_time$review_time) # MIN: 840,672,001
+max(review_time$review_time) # MAX: 1,326,285,348
 stats_function(review_time$review_time)
 
 # ------ REVIEW TIME ??? ------
@@ -902,3 +1098,6 @@ beer_reviews %>%
 beer_reviews %>%
   group_by(review_time) %>%
   n_distinct()
+
+
+
