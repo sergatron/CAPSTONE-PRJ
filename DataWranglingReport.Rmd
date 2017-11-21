@@ -301,7 +301,7 @@ length(interval_abv)
 
 # sum the amounts within two standard deviations and divide by total amount of rows
 # this will contain about 95% of all the data points in the beer's abv column
-(140735 + 1193157 + 200598) / length(abv_vector) * 100
+(140735 + 1193157 + 200598) / length(abv_vector) * 100 # 0.9671
 
 ```
 
