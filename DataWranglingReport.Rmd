@@ -3,9 +3,7 @@ title: 'Capstone Project: Data Wrangling Report'
 author: "Sergey Mouzykin"
 date: "November 21, 2017"
 output:
-  html_document: default
-  pdf_document: default
-  word_document: default
+  rmarkdown::github_document
 ---
 ### Overview 
 This raw data will be cleaned and wrangled into a form which then can be analyzed. The following will be performed:
@@ -245,7 +243,7 @@ Plotting the beer's ABV as a histogram will reveal it's distribution and help us
 #glimpse(beer_reviews)
 blues = brewer.pal(6, 'Blues')
 ggplot(beer_reviews, aes(x = beer_abv)) + 
-  geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD') + 
+  geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD', col = 'black') + 
   scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +
   scale_y_continuous('Beer Count') +
   ggtitle('Beer ABV Distribution') +
