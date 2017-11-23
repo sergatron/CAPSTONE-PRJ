@@ -2,8 +2,8 @@
 title: 'Capstone Project: Data Wrangling Report'
 author: "Sergey Mouzykin"
 date: "November 21, 2017"
-output:
-  rmarkdown::github_document
+output: rmarkdown::github_document
+ 
 ---
 ### Overview 
 This raw data will be cleaned and wrangled into a form which then can be analyzed. The following will be performed:
