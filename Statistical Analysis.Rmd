@@ -268,26 +268,7 @@ beer_reviews_sd_filter =
 
 ```{r}
 # ---- PLOTS: themes ----
-# use gsub on beer_styles column and create a new column for a general beer style
-beer_reviews_5k = sample_n(beer_reviews, 5000)
-glimpse(beer_reviews)
-theme
-theme_pink <- theme(panel.background = element_blank(),
-                    legend.key = element_blank(),
-                    legend.background = element_blank(),
-                    strip.background = element_blank(),
-                    plot.background = element_rect(fill = 'pink', color = "black", size = 3),
-                    panel.grid = element_blank(),
-                    axis.line = element_line(color = "black"),
-                    axis.ticks = element_line(color = "black"),
-                    strip.text = element_text(size = 16, color = 'red'),
-                    axis.title.y = element_text(color = 'red', hjust = 0.5, face = "italic"),
-                    axis.title.x = element_text(color = 'red', hjust = 0.5, face = "italic"),
-                    plot.title = element_text(color = 'red', hjust = '0.5'),
-                    
-                    axis.text = element_text(color = "black"),
-                    legend.position = "none")
-?theme
+
 reds = brewer.pal(9, 'Reds')
 blues = brewer.pal(9, 'Blues')
 theme_blue = theme(panel.background = element_blank(),
@@ -316,9 +297,11 @@ theme_blue = theme(panel.background = element_blank(),
 ```{r}
 # ------ PLOTTING ------
 
-# PLOT: Beer ABV distribution
+# reduce the amount of data points with the sample_n()
+# this will produce the plots much faster than plotting all 1.5 million reviews
 beer_reviews_10k = sample_n(beer_reviews, size = 10000)
 
+# PLOT: Beer ABV distribution
 ggplot(beer_reviews_10k, aes(x = beer_abv)) + 
   geom_histogram(binwidth = 0.5, position = 'dodge', fill = '#3182BD', col = 'black') + 
   scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 2)) +
@@ -328,139 +311,87 @@ ggplot(beer_reviews_10k, aes(x = beer_abv)) +
 
 stats_function_2(beer_reviews$beer_abv, 'Beer ABV Summary')
 
-# PLOT: ABV and Style
-ggplot(beer_reviews_10k, aes(x = general_beer_style , y = beer_abv )) + 
-  geom_point() + 
-  geom_jitter()
-
-ggplot(beer_reviews_10k, aes(x = general_beer_style , y = beer_abv, fill = overall )) + 
-  geom_bar(stat = 'identity')
-
-
 # HISTOGRAM
-ggplot(beer_reviews_10k, aes(x = beer_abv, fill = general_beer_style)) + 
-  geom_histogram(binwidth = 10, position = 'dodge', alpha = 0.4) 
-  #scale_x_continuous( breaks = seq(0, 60, by = 2)) +
-  #theme_blue
-
-ggplot(beer_reviews_5k, aes(x = as.factor(overall), fill = general_beer_style)) + # ??????????????????
+ggplot(beer_reviews_10k, aes(x = as.factor(overall), fill = general_beer_style)) +
   geom_histogram(binwidth = 15, stat = 'count') +
   #scale_x_continuous(limits = c(1,20)) + 
   theme_classic()
 
 # ABV factor and beer style
-ggplot(beer_reviews_5k, aes(x = beer_abv_factor, fill = general_beer_style)) + 
+ggplot(beer_reviews_10k, aes(x = beer_abv_factor, fill = general_beer_style)) + 
   geom_histogram(stat = 'count', position = 'dodge') +
   scale_x_discrete('Beer ABV') + 
   theme_blue
 
 
-# BAR GRAPH
-# beer style vs overall
-ggplot(beer_reviews_5k, aes(x = general_beer_style, y = overall, fill = general_beer_style)) + 
-  geom_bar(stat = 'identity') +
-  scale_x_discrete('Beer Style',  expand = c(0.1, 0)) 
-  #scale_y_discrete('Overall Rating', breaks = seq(0, 5, by = 1)) +
-  #theme_classic()
-
 ```
+
 
 
 ```{r}
 
-# reduce the amount of data points with the sample_n()
-reviews_10k = sample_n(beer_reviews, size = 10000)
-glimpse(reviews_10k)
+
 
 # --- Point Plot
 # overall vs. beer ABV, colored by beer style
-ggplot(reviews_10k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
+ggplot(beer_reviews_10k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
   geom_point(alpha = 0.3) +
   geom_jitter() +
   theme_blue
 
-# filter out Lager in particular with its respective ABV, and ratings
-# plot Lager overall ratings vs. the ABV
-
 # --- Point Plot
 # Overall vs. Style, colored by beer style
-ggplot(reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
+ggplot(beer_reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
   geom_point(alpha = 0.1, shape = 21) +
   geom_jitter() + 
   theme_blue
 # Overall and Beer ABV distribution
-ggplot(reviews_10k, aes(x = overall, fill = beer_abv_factor)) + 
+ggplot(beer_reviews_10k, aes(x = overall, fill = beer_abv_factor)) + 
   geom_histogram(binwidth = 0.25) +
   theme_blue
 # Overall and Beer Styles
-ggplot(reviews_10k, aes(x = overall, fill = general_beer_style)) + 
+ggplot(beer_reviews_10k, aes(x = overall, fill = general_beer_style)) + 
   geom_histogram(binwidth = 0.25) +
   theme_blue
 
-ggplot(reviews_10k, aes(x = beer_abv, y = general_beer_style, col = as.factor(overall))) + 
+ggplot(beer_reviews_10k, aes(x = beer_abv, y = general_beer_style, col = as.factor(overall))) + 
   geom_point(alpha = 0.1, shape = 21) +
   geom_jitter() + 
   theme_blue
 
-# ------ Histogram Plot -------
-# Overall Rating Distribution
-ggplot(reviews_10k, aes(x = overall)) + 
-  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
-  theme_blue
-
-ggplot(reviews_10k, aes(x = taste)) + 
-  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
-  theme_blue
-
-ggplot(reviews_10k, aes(x = aroma)) + 
-  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
-  theme_blue
-
-ggplot(reviews_10k, aes(x = appearance)) + 
-  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
-  theme_blue
-
-ggplot(reviews_10k, aes(x = palate)) + 
-  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
-  theme_blue
-
 
 ```
-
-
-
 
 ```{r}
-# POINT PLOTS
-# overall vs. ABV
-ggplot(beer_reviews_5k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
-  #geom_point(alpha = 0.3) +
-  stat_smooth(method = 'loess', se = FALSE) +
-  #geom_jitter() +
-  theme_blue
-  
-# overall vs. beer style
-ggplot(beer_reviews_5k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
-  geom_point(alpha = 0.3) +
-  #stat_smooth(method = 'loess', se = FALSE) +
-  geom_jitter() 
-  #theme_blue
-  
-ggplot(beer_reviews_5k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
-  geom_point(shape = 21, alpha = 0.6) + 
-  geom_jitter()  +
-  #stat_smooth(method = 'loess', se = FALSE)
+
+# ------ Histogram Plot -------
+# Overall Rating Distribution
+ggplot(beer_reviews_10k, aes(x = overall)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
 
-# palate vs overall
-ggplot(beer_reviews_5k, aes(x = palate, y = overall)) + 
-  geom_point(alpha = 0.3) +
-  stat_smooth(method = 'loess', se = TRUE) + 
-  geom_jitter() +
-  theme_classic()
+ggplot(beer_reviews_10k, aes(x = taste)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(beer_reviews_10k, aes(x = aroma)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(beer_reviews_10k, aes(x = appearance)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
+ggplot(beer_reviews_10k, aes(x = palate)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+
 ```
 
 
+
+
+### Profile Names
 
 ```{r}
 # ------ PROFILE NAMES: Summary Stats ------
@@ -488,15 +419,8 @@ profile_names =
 profile_names # 33,388 total profile names
 glimpse(profile_names)
 
-stats_function_2(profile_names$reviewed_amount, 'Profile Name')
+stats_function_2(profile_names$reviewed_amount, 'Review Amount')
 stats_function_2(profile_names$overall_mean, 'Profile Name')
-
-beer_reviews %>%
-  select(profile_name) %>%
-  contains('northyorksammy')
-
-name1 = contains('northyorksammy', vars = beer_reviews$profile_name)
-length(name1)
 
 # find lowest activity by filtering review amount 
 beer_reviews %>% 
