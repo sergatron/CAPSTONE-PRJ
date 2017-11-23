@@ -2,9 +2,8 @@
 title: 'Beer Review: The Story of Data'
 author: "Sergey Mouzykin"
 date: "November 15, 2017"
-output:
-  html_document: default
-  word_document: default
+output: rmarkdown::github_document
+  
 ---
 
 Your Capstone project milestone report is an early draft of your final Capstone report. We encourage you and your mentor to plan multiple milestones if possible, since your story will evolve with exploration and analysis. This is a slightly longer (3-5 page) draft that should have the following:
@@ -40,6 +39,7 @@ beer_reviews <- read_csv("beer_reviews_clean.csv")
 beer_reviews = as_data_frame(beer_reviews)
 ```
 
+This data was collected through the website *beeradvocate.com*
 
 This dataset gives us a glimpse at the people's preference for beer. Some may be extreme beer enthusiasts and others are perhaps trying something different to break into the world of beer. In either case, this is a collection of their, roughly 1.5 million, opinions of the beer's physical characteristics such as aroma, appearance, palate, taste, and the overall impression. In addition, included are the brewery name, alcohol content and beer style which may play an important role in selecting an ideal beer.
 
@@ -59,9 +59,16 @@ This dataset gives us a glimpse at the people's preference for beer. Some may be
 |beer ABV| Alcohol content of beer
 |beer ID| Identification number of beer
 
-### Limitations
+### Limitations 
 
-country of origin is not defined in this dataset and would require research.
+Country of Origin
+
+- The country of origin is not defined in this dataset and would require research. This could be an important indicator as to why some beers have a low amount reviews. It's possible that they are only available in certain country and at limited supplies. 
+
+
+Beer drinking population
+
+- Considering that some profile names have limited amount of reviews it is possible that some of those people are not beer drinkers but rather are experimenting and recording their experiences. In turn, this may skew the results since they are more likely to disagree on the ratings with someone who is a beer drinker. 
 
 
 ### Cleaning and Wrangling
@@ -70,7 +77,7 @@ Before the analysis could begin, this data needed to be cleaned and wrangled. Th
 
 ### Data Exploration: The Five Aspects
 
-```{r Plot Theme Blue, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r Plot Theme Blue, message=FALSE, warning=FALSE, include=FALSE}
 theme_blue = theme(panel.background = element_blank(),
                   legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
                   legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
@@ -88,6 +95,7 @@ theme_blue = theme(panel.background = element_blank(),
                   axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
                   plot.title = element_text(color = 'black', hjust = '0.5'),
                   axis.text = element_text(color = "black"))
+
 stats_function_2 = function(DF, col_name, summary = FALSE){
   if (summary == TRUE){
     summary(DF)
@@ -111,12 +119,8 @@ stats_function_2 = function(DF, col_name, summary = FALSE){
 }
 ```
 
-```{r Plot: Overall, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 
-```
-
-
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r Plots, echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(beer_reviews, aes(x = overall)) + 
   geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
@@ -144,9 +148,10 @@ stats_function_2(beer_reviews$palate, 'Palate Rating Summary')
 ```
 
 
-These histograms summarize the distribution of the five aspects and how they were rated. For all five aspects, we can see that a rating of four was given out quite frequently. In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary with the beer name. 
+These histograms summarize the distribution of the five aspects and how they were rated. For all five aspects, we can see that a rating of four was given out quite frequently. In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. This is perfectly reasonable since we all have our own personal preferences which may stem from our diverse backgrounds and personal experiences. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary with the beer name. 
 
-```{r Extreme Variation, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r Extreme Variation, echo=FALSE, message=FALSE, warning=FALSE}
+# extreme scenario
 beer_reviews_dist = 
   beer_reviews %>%
   group_by(beer_name, overall, taste, aroma, appearance, palate) %>%
@@ -157,10 +162,9 @@ beer_reviews_dist =
   print(n = 10)
 ```
 
-It is interesting to find that in some of the more extreme scenarios the ratings between different aspects vary greatly. In particular, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. 
+It is interesting to find that in some of the more extreme scenarios, the ratings between different aspects vary greatly. In particular, for the beer, *Latter Days Stout*, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. It seems contradictory to rate the overall as a zero while enjoying at least one aspect of the beer, in particular, its aroma. 
 
-```{r Summary Stats, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-
+```{r Summary Stats, echo=FALSE, message=FALSE, warning=FALSE}
 
 # tally each beer name and calculate SD for the 5 observations
 beer_reviews_SD = 
@@ -187,23 +191,26 @@ stats_function_2(beer_reviews_SD$palate_sd, 'Palate SD')
 ```
 
 
-Calculating the deviation for each beer's respective five observations we can have a glimpse at how people may agree or disagree among the five observations. The lower deviation value implies that there is more agreement than disagreement among the reviews, and a higher deviation value implies more disagreement. We can also plot the distribution of these standard deviations and realize that it is very likely that there will be disagreement among most beers but that disagreement will be relatively small. Ultimately, the beers which have greatest disagreements tend to be the ones with the least amount of reviews. From this, we can infer that those beers, in particular, may be best suited for people with a more developed taste for beer rather than for someone who drinks a beer on a seldom occasion.
+Calculating the deviation for each beer's respective five observations we can have a glimpse at how people may agree or disagree among the five observations. The lower deviation value implies that there is more agreement than disagreement among the reviews, and a higher deviation value implies more disagreement. We can also plot the distribution of these standard deviations and realize that it is highly likely that there will be disagreement among most beers but that disagreement will be relatively small. Ultimately, the beers which have greatest disagreements tend to be the ones with the least amount of reviews. 
+From this, we can infer that those beers, in particular, may be best suited for people with a more developed taste for beer rather than for someone who drinks a beer on a seldom occasion.
 
 
 ### Data Exploration: Beer Alcohol Content
 
-```{r Plot: Beer ABV, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r Plot: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE}
 blues = brewer.pal(6, 'Blues')
 ggplot(beer_reviews, aes(x = beer_abv)) + 
-  geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD') + 
+  geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD', col = 'black') + 
   scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +
   scale_y_continuous('Beer Count') +
   ggtitle('Beer ABV Distribution') +
-  theme_classic()
+  theme_blue
 ```
+
 This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 stats_function_2 = function(DF, col_name, summary = FALSE){
   # DF has to be a list
   if (summary == TRUE){
@@ -244,6 +251,7 @@ stats_function_2(beer_reviews$beer_abv, 'Beer ABV')
 ### Old Approach
 
 1. Find the overall rating for each beer style and the most popular beer style.
+
   a. Which breweries produce the highest rated beers?
 
 How does each aspect, including alcohol content and beer style, affect the overall rating?
