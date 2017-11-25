@@ -1,27 +1,15 @@
-Beer Review: The Story of Data
+The Beer Story
 ================
 Sergey Mouzykin
 November 15, 2017
-
-Your Capstone project milestone report is an early draft of your final Capstone report. We encourage you and your mentor to plan multiple milestones if possible, since your story will evolve with exploration and analysis. This is a slightly longer (3-5 page) draft that should have the following:
-
-An introduction to the problem (based on your earlier Capstone submissions).
-
-A deeper dive into the dataset:
-
--   What important fields and information does the data set have?
--   What are its limitations i.e. what are some questions that you cannot answer with this data set?
--   What kind of cleaning and wrangling did you need to do?
--   Any preliminary exploration you’ve performed and your initial findings.
--   Based on these findings, what approach are you going to take? How has your approach changed from what you initially proposed, if applicable?
-
-Basically, the milestone is an opportunity for you to practice your data story skills. We encourage you and your mentor to plan multiple milestones if possible.
 
 ### Introduction
 
 The great beer shortage has driven people to madness. No. That is obviously not true. On the contrary, the abundance of beer variety has left us with little imagination as to what the next micro brew will be found on the shelves of your local beer distributor. Perhaps there is hope in narrowing down your next selection before the next meal by using some type of recommendation system based on previous reviews. The decision for your next beer experience doesn't have to be a tedious one. Technology has made humanity interconnected like never before; it is here to make our lives easier and more efficient if used accordingly. It helps us make decisions of any magnitude, whether you're searching for a house or a perfect brew, our interconnected world will aid us in making those decisions.
 
 ### Dataset Preview
+
+This data was collected through the website *beeradvocate.com*
 
 This dataset gives us a glimpse at the people's preference for beer. Some may be extreme beer enthusiasts and others are perhaps trying something different to break into the world of beer. In either case, this is a collection of their, roughly 1.5 million, opinions of the beer's physical characteristics such as aroma, appearance, palate, taste, and the overall impression. In addition, included are the brewery name, alcohol content and beer style which may play an important role in selecting an ideal beer.
 
@@ -41,9 +29,15 @@ This dataset gives us a glimpse at the people's preference for beer. Some may be
 | beer ABV           | Alcohol content of beer               |
 | beer ID            | Identification number of beer         |
 
-### Limitations under construction
+### Limitations
 
-country of origin is not defined in this dataset and would require research. how was it collected? beer drinking population
+Country of Origin
+
+-   The country of origin is not defined in this dataset and would require research. This could be an important indicator as to why some beers have a low amount reviews. It's possible that they are only available in certain countries and with limited supplies.
+
+Beer drinking population
+
+-   Considering that some profile names have limited amount of reviews it is possible that some of those people are not beer drinkers but rather are experimenting and recording their experiences. In turn, this may skew the results since they are more likely to disagree on the ratings with someone who is a beer drinker.
 
 ### Cleaning and Wrangling
 
@@ -191,7 +185,9 @@ Calculating the deviation for each beer's respective five observations we can ha
 
 ### Data Exploration: Beer Alcohol Content
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plot:%20Beer%20ABV-1.png) This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
+![](data_story_files/figure-markdown_github-ascii_identifiers/Plot:%20Beer%20ABV-1.png)
+
+This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
 
     ##                    Beer ABV
     ## standard deviation 2.272372
@@ -210,15 +206,170 @@ Calculating the deviation for each beer's respective five observations we can ha
 | Max                | 57.7  |
 | Min                | 0.01  |
 
-### Old Approach
+### Initial Approach
 
-1.  Find the overall rating for each beer style and the most popular beer style.
+Find the overall rating for each beer style and the most popular beer style.
+
+-   To find the most popular beer style we can simply count the amount of times each style was reviewed. In this case, the most reviewed style is the *American IPA* with 117,586 reviews. However, this doesn't tell the entire story. The beer styles with the most amount of reviews may indicate that they are just easier to obtain. It is unfair to assume that each of these beers in the dataset were easily available to everyone who participated. Perhaps, if each beer style was reviewed the same amount of times, then we can make a more accurate conclusion as to which beer style is more popular.
 
 <!-- -->
 
-1.  Which breweries produce the highest rated beers?
+    ## # A tibble: 104 x 2
+    ##                          beer_style review_count
+    ##                               <chr>        <int>
+    ##  1                     american ipa       117586
+    ##  2   american double / imperial ipa        85977
+    ##  3          american pale ale (apa)        63469
+    ##  4           russian imperial stout        54129
+    ##  5 american double / imperial stout        50705
+    ##  6                  american porter        50477
+    ##  7         american amber / red ale        45751
+    ##  8          belgian strong dark ale        37743
+    ##  9           fruit / vegetable beer        33861
+    ## 10              american strong ale        31945
+    ## # ... with 94 more rows
+
+-   In total, there are 104 beer styles contained in this dataset and we find the best rated ones by calculating some simple statstics. In particular, we can look at each beer styles' respective beer name and its overall rating. Since we don't have each beer styles individual rating, we are utilizing the given information in the most efficient manner. Here, we calculate the mean, median, and standard deviation for initial insight into the styles. Then, we can use the found information to filter the styles which meet our conditions.
+
+<!-- -->
+
+    ## # A tibble: 104 x 3
+    ##                          beer_style review_count overall_mean
+    ##                               <chr>        <int>        <dbl>
+    ##  1                american wild ale        17794     4.093262
+    ##  2                           gueuze         6009     4.086287
+    ##  3                 quadrupel (quad)        18086     4.071630
+    ##  4               lambic - unblended         1114     4.048923
+    ##  5 american double / imperial stout        50705     4.029820
+    ##  6           russian imperial stout        54129     4.023084
+    ##  7                       weizenbock         9412     4.007969
+    ##  8   american double / imperial ipa        85977     3.998017
+    ##  9                 flanders red ale         6664     3.992722
+    ## 10                         rye beer        10130     3.981737
+    ## 11       keller bier / zwickel bier         2591     3.981088
+    ## 12                          eisbock         2663     3.977094
+    ## 13                     american ipa       117586     3.965221
+    ## 14                             gose          686     3.965015
+    ## 15           saison / farmhouse ale        31480     3.962564
+    ## 16                      belgian ipa        12471     3.958704
+    ## 17                    baltic porter        11572     3.955410
+    ## 18                       roggenbier          466     3.948498
+    ## 19                    oatmeal stout        18145     3.941692
+    ## 20               american black ale        11446     3.934475
+    ## # ... with 84 more rows
+
+    ##                    beer style review stats
+    ## standard deviation 17830.33               
+    ## variance           317920735              
+    ## mean               15255.9                
+    ## median             9978                   
+    ## max                117586                 
+    ## min                241
+
+    ## # A tibble: 52 x 3
+    ##                          beer_style review_count overall_mean
+    ##                               <chr>        <int>        <dbl>
+    ##  1                american wild ale        17794     4.093262
+    ##  2                 quadrupel (quad)        18086     4.071630
+    ##  3 american double / imperial stout        50705     4.029820
+    ##  4           russian imperial stout        54129     4.023084
+    ##  5   american double / imperial ipa        85977     3.998017
+    ##  6                         rye beer        10130     3.981737
+    ##  7                     american ipa       117586     3.965221
+    ##  8           saison / farmhouse ale        31480     3.962564
+    ##  9                      belgian ipa        12471     3.958704
+    ## 10                    baltic porter        11572     3.955410
+    ## 11                    oatmeal stout        18145     3.941692
+    ## 12               american black ale        11446     3.934475
+    ## 13                       hefeweizen        27908     3.929626
+    ## 14                           dubbel        19983     3.921733
+    ## 15                   english porter        11200     3.917946
+    ## 16                           tripel        30328     3.914287
+    ## 17          belgian strong dark ale        37743     3.913322
+    ## 18                          old ale        14703     3.899000
+    ## 19              american barleywine        26728     3.896756
+    ## 20                  american porter        50477     3.895735
+    ## # ... with 32 more rows
+
+    ## [1] 4.298251
+
+    ## [1] 4.045727
+
+Our search yields the following beer styles:
+
+    ## # A tibble: 0 x 3
+    ## # ... with 3 variables: beer_style <chr>, review_count <int>,
+    ## #   overall_mean <dbl>
+
+    ## # A tibble: 4 x 3
+    ##                         beer_style review_count overall_mean
+    ##                              <chr>        <int>        <dbl>
+    ## 1                american wild ale        17794     4.093262
+    ## 2                 quadrupel (quad)        18086     4.071630
+    ## 3 american double / imperial stout        50705     4.029820
+    ## 4           russian imperial stout        54129     4.023084
+
+Which breweries produce the highest rated beers?
+
+-   In total, there are 5,740 breweries contained in this dataset and that's a pretty large number of breweries to consider if you want to find the best ones. In this case, the best breweries will be selected by calculating their respective beer's overall rating since we don't actually have any ratings for the individual breweries themselves. Using summary statistics we can shine a light upon breweries which produce the best rated beers.
+
+<!-- -->
+
+    ## [1] 5740
+
+    ## # A tibble: 2,914 x 3
+    ##                                                  brewery_name review_count
+    ##                                                         <chr>        <int>
+    ##  1                                    brauerei zehendner gmbh           28
+    ##  2                                              the alchemist          527
+    ##  3 brouwerij westvleteren (sint-sixtusabdij van westvleteren)         2378
+    ##  4                              u fleku pivovaru a restauraci           30
+    ##  5                    peg's cantina & brewpub / cycle brewing           79
+    ##  6                                        brauerei schumacher           19
+    ##  7                              russian river brewing company        11311
+    ##  8                                    närke kulturbryggeri ab          212
+    ##  9                         badische staatsbrauerei rothaus ag          126
+    ## 10                               quincy ships brewing company           17
+    ## 11                                      brauerei im füchschen           27
+    ## 12                         brauerei zur malzmühle schwartz kg           20
+    ## 13                          founders restaurant & brewing co.           22
+    ## 14                                       de cam geuzestekerij          159
+    ## 15                              thoroughbreds grill & brewing           22
+    ## 16                                   live oak brewing company          584
+    ## 17                                     hill farmstead brewery         1531
+    ## 18                                   brouwerij drie fonteinen         1668
+    ## 19                                 kern river brewing company          929
+    ## 20                              oakham ales / the brewery tap           88
+    ## # ... with 2,894 more rows, and 1 more variables: overall_mean <dbl>
+
+    ##                    brewery review stats
+    ## standard deviation 2072.578            
+    ## variance           4295578             
+    ## mean               540.1723            
+    ## median             72                  
+    ## max                39444               
+    ## min                14
+
+    ## [1] "list"
+
+    ## [1] 4.381924
+
+Our search yields the following six breweries:
+
+    ## # A tibble: 6 x 3
+    ##                                                 brewery_name review_count
+    ##                                                        <chr>        <int>
+    ## 1                                    brauerei zehendner gmbh           28
+    ## 2                                              the alchemist          527
+    ## 3 brouwerij westvleteren (sint-sixtusabdij van westvleteren)         2378
+    ## 4                              u fleku pivovaru a restauraci           30
+    ## 5                    peg's cantina & brewpub / cycle brewing           79
+    ## 6                                        brauerei schumacher           19
+    ## # ... with 1 more variables: overall_mean <dbl>
 
 How does each aspect, including alcohol content and beer style, affect the overall rating?
+
+![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-1.png)![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-2.png)![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-3.png)![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-4.png)
 
 Do any of the aspects affect the overall rating?
 

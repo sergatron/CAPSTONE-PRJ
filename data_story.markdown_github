@@ -1,22 +1,7 @@
-Beer Review: The Story of Data
+The Beer Story
 ================
 Sergey Mouzykin
 November 15, 2017
-
-
-Your Capstone project milestone report is an early draft of your final Capstone report. We encourage you and your mentor to plan multiple milestones if possible, since your story will evolve with exploration and analysis. This is a slightly longer (3-5 page) draft that should have the following:
-
-An introduction to the problem (based on your earlier Capstone submissions).
-
-A deeper dive into the dataset:
-
--   What important fields and information does the data set have?
--   What are its limitations i.e. what are some questions that you cannot answer with this data set?
--   What kind of cleaning and wrangling did you need to do?
--   Any preliminary exploration you’ve performed and your initial findings.
--   Based on these findings, what approach are you going to take? How has your approach changed from what you initially proposed, if applicable?
-
-Basically, the milestone is an opportunity for you to practice your data story skills. We encourage you and your mentor to plan multiple milestones if possible.
 
 ### Introduction
 
@@ -25,6 +10,8 @@ The great beer shortage has driven people to madness. No. That is obviously not 
 ### Dataset Preview
 
 `{r, message=FALSE, warning=FALSE, include=FALSE} library(ggplot2) library(readr) library(tidyr) library(dplyr) library(tibble) library(RColorBrewer) library(ggthemes) library(GGally) beer_reviews <- read_csv("beer_reviews_clean.csv") beer_reviews = as_data_frame(beer_reviews)`
+
+This data was collected through the website *beeradvocate.com*
 
 This dataset gives us a glimpse at the people's preference for beer. Some may be extreme beer enthusiasts and others are perhaps trying something different to break into the world of beer. In either case, this is a collection of their, roughly 1.5 million, opinions of the beer's physical characteristics such as aroma, appearance, palate, taste, and the overall impression. In addition, included are the brewery name, alcohol content and beer style which may play an important role in selecting an ideal beer.
 
@@ -44,9 +31,15 @@ This dataset gives us a glimpse at the people's preference for beer. Some may be
 | beer ABV           | Alcohol content of beer               |
 | beer ID            | Identification number of beer         |
 
-### Limitations under construction
+### Limitations
 
-country of origin is not defined in this dataset and would require research. how was it collected? beer drinking population
+Country of Origin
+
+-   The country of origin is not defined in this dataset and would require research. This could be an important indicator as to why some beers have a low amount reviews. It's possible that they are only available in certain countries and with limited supplies.
+
+Beer drinking population
+
+-   Considering that some profile names have limited amount of reviews it is possible that some of those people are not beer drinkers but rather are experimenting and recording their experiences. In turn, this may skew the results since they are more likely to disagree on the ratings with someone who is a beer drinker.
 
 ### Cleaning and Wrangling
 
@@ -98,12 +91,13 @@ Calculating the deviation for each beer's respective five observations we can ha
 
 ### Data Exploration: Beer Alcohol Content
 
-`{r Plot: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE} blues = brewer.pal(6, 'Blues') ggplot(beer_reviews, aes(x = beer_abv)) +    geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD', col = 'black') +    scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +   scale_y_continuous('Beer Count') +   ggtitle('Beer ABV Distribution') +   theme_blue` This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
+`{r Plot: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE} blues = brewer.pal(6, 'Blues') ggplot(beer_reviews, aes(x = beer_abv)) +    geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD', col = 'black') +    scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +   scale_y_continuous('Beer Count') +   ggtitle('Beer ABV Distribution') +   theme_blue`
 
-\`\`\`{r, echo=FALSE, message=FALSE, warning=FALSE} stats\_function\_2 = function(DF, col\_name, summary = FALSE){ \# DF has to be a list if (summary == TRUE){ summary(DF) } else if(summary == FALSE){ DF = list(DF)
-sd\_list = lapply(DF, sd) var\_list = lapply(DF, var) mean\_list = lapply(DF, mean) median\_list = lapply(DF, median) max\_list = lapply(DF, max) min\_list = lapply(DF, min) yy = c(sd\_list, var\_list, mean\_list, median\_list, max\_list, min\_list) rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min') columns = c(col1 = col\_name) sd\_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns)) colnames(sd\_matrix) = columns rownames(sd\_matrix) = rows sd\_matrix }
+This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
 
-} stats\_function\_2(beer\_reviews$beer\_abv, 'Beer ABV')
+\`\`\`{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+stats\_function\_2(beer\_reviews$beer\_abv, 'Beer ABV')
 
 \`\`\`
 
@@ -116,27 +110,98 @@ sd\_list = lapply(DF, sd) var\_list = lapply(DF, var) mean\_list = lapply(DF, me
 | Max                | 57.7  |
 | Min                | 0.01  |
 
-### Old Approach
+### Initial Approach
 
-1.  Find the overall rating for each beer style and the most popular beer style.
+Find the overall rating for each beer style and the most popular beer style.
 
-<!-- -->
+-   To find the most popular beer style we can simply count the amount of times each style was reviewed. In this case, the most reviewed style is the *American IPA* with 117,586 reviews. However, this doesn't tell the entire story. The beer styles with the most amount of reviews may indicate that they are just easier to obtain. It is unfair to assume that each of these beers in the dataset were easily available to everyone who participated. Perhaps, if each beer style was reviewed the same amount of times, then we can make a more accurate conclusion as to which beer style is more popular.
 
-1.  Which breweries produce the highest rated beers?
+`{r Beer Style: Most Popular, echo=FALSE, message=FALSE, warning=FALSE} beer_reviews %>%   group_by(beer_style) %>%   summarise(review_count = n()) %>%   arrange(desc(review_count))`
+
+-   In total, there are 104 beer styles contained in this dataset and we find the best rated ones by calculating some simple statstics. In particular, we can look at each beer styles' respective beer name and its overall rating. Since we don't have each beer styles individual rating, we are utilizing the given information in the most efficient manner. Here, we calculate the mean, median, and standard deviation for initial insight into the styles. Then, we can use the found information to filter the styles which meet our conditions.
+
+\`\`\`{r Beer Style Rating, echo=FALSE, message=FALSE, warning=FALSE} \# Rating the Beer Styles beer\_style\_rating = beer\_reviews %&gt;% group\_by(beer\_style) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% print(n = 20)
+
+stats\_function\_2(beer\_style\_rating$review\_count, 'beer style review stats') \# the median for reviewed amount is 9978, so we can use filter() to narrow the search by looking at beer styles with at least 9978 ratings
+
+beer\_style\_rating = beer\_reviews %&gt;% group\_by(beer\_style) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 9978) %&gt;% print(n = 20)
+
+Looking at beer styles with at least 9978 ratings, we can rate them by calculating the mean of the overall ratings
+==================================================================================================================
+
+Before deciding on the best beer styles, we should calculate the mean and SD for all overall ratings. Better beer styles should be at least
+===========================================================================================================================================
+
+two SD's away from the mean
+===========================
+
+beer\_ovr\_stats = stats\_function\_2(beer\_style\_rating$overall\_mean, 'beer style rating stats') one\_sd = beer\_ovr\_stats\[1\] brewery\_mean = beer\_ovr\_stats\[3\] as.double(brewery\_mean) + 2\* as.double(one\_sd) \# 4.29 as.double(brewery\_mean) + as.double(one\_sd) \# 4.04
+
+\`\`\`
+
+Our search yields the following beer styles:
+
+\`\`\`{r Best Rated Beer Styles, echo=FALSE, message=FALSE, warning=FALSE}
+
+two standard deviations above the mean is 4.29 Let's filter again to find brewweries at or above 4.29
+=====================================================================================================
+
+beer\_style\_rating = beer\_reviews %&gt;% group\_by(beer\_style) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 9978, overall\_mean &gt;= 4.29) %&gt;% print(n = 20) \# unfortunately, this yields with zero beer styles. Now let's try within one SD and round 4.04 to just 4
+
+beer\_style\_rating = beer\_reviews %&gt;% group\_by(beer\_style) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 9978, overall\_mean &gt;= 4) %&gt;% print(n = 20)
+
+now the amount of beer styles are reduced to 4. All with an overall mean of at least 4 and reviewed at least 9978 times
+=======================================================================================================================
+
+\`\`\`
+
+Which breweries produce the highest rated beers?
+
+-   In total, there are 5,740 breweries contained in this dataset and that's a pretty large number of breweries to consider if you want to find the best ones. In this case, the best breweries will be selected by calculating their respective beer's overall rating since we don't actually have any ratings for the individual breweries themselves. Using summary statistics we can shine a light upon breweries which produce the best rated beers.
+
+\`\`\`{r Brewery Ratings, echo=FALSE, message=FALSE, warning=FALSE} \# distinct amount of breweries beer\_reviews %&gt;% select(brewery\_name) %&gt;% n\_distinct()
+
+Rating the Breweries
+====================
+
+brewery\_rating = beer\_reviews %&gt;% group\_by(brewery\_name) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 14) %&gt;% print(n = 20)
+
+stats\_function\_2(brewery\_rating$review\_count, 'brewery review stats') \# the median for reviewed amount is 14, so we can use filter() to narrow the search by looking at breweries with at least 14 ratings
+
+Looking at breweries with at least 14 ratings, we can rate them by calculating the mean of the overall ratings
+==============================================================================================================
+
+Before deciding on the best breweries, we should calculate the mean and SD for all overall ratings. Better breweries should be at least
+=======================================================================================================================================
+
+two SD's away from the mean
+===========================
+
+brewery\_ovr\_stats = stats\_function\_2(brewery\_rating$overall\_mean, 'brewery rating stats') one\_sd = brewery\_ovr\_stats\[1\] brewery\_mean = brewery\_ovr\_stats\[3\] typeof(brewery\_mean)
+
+as.double(brewery\_mean) + 2 \* as.double(one\_sd)
+
+\`\`\`
+
+Our search yields the following six breweries:
+
+\`\`\`{r Best Rated Breweries, echo=FALSE, message=FALSE, warning=FALSE} \# two standard deviations above the mean is 4.38. Let's filter again to find brewweries at or above 4.38 brewery\_rating\_filter = beer\_reviews %&gt;% group\_by(brewery\_name) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 14, overall\_mean &gt;= 4.38) %&gt;% print(n = 20) \# now the amount of breweries are reduced to 6. All with an overall mean of at least 4.38
+
+\`\`\`
 
 How does each aspect, including alcohol content and beer style, affect the overall rating?
 
-\`\`\`{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE} \# Overall vs Beer ABV ggplot(reviews\_10k, aes(x = overall, y = beer\_abv, col = general\_beer\_style)) + geom\_point(alpha = 0.3) + geom\_jitter() + theme\_blue \# Overall and Beer ABV distribution ggplot(reviews\_10k, aes(x = overall, fill = beer\_abv\_factor)) + geom\_histogram(binwidth = 0.25) + theme\_blue
+\`\`\`{r Plots: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE, Overall, Beer Style, echo=FALSE} reviews\_10k = sample\_n(beer\_reviews, size = 10000) \# Overall vs Beer ABV ggplot(reviews\_10k, aes(x = overall, y = beer\_abv, col = general\_beer\_style)) + geom\_point(alpha = 0.4) + geom\_jitter() + theme\_blue \# Overall and Beer ABV distribution ggplot(reviews\_10k, aes(x = overall, fill = beer\_abv\_factor)) + geom\_histogram(binwidth = 0.25) + theme\_blue
 
 Overall vs Style
 ================
 
-ggplot(reviews\_10k, aes(x = overall, y = general\_beer\_style, col = beer\_abv\_factor)) + geom\_point(alpha = 0.1, shape = 21) + geom\_jitter() + theme\_blue
+ggplot(reviews\_10k, aes(x = overall, y = general\_beer\_style, col = beer\_abv\_factor)) + geom\_point(alpha = 0.4) + geom\_jitter() + theme\_blue
 
 Beer ABV vs Style
 =================
 
-ggplot(reviews\_10k, aes(x = beer\_abv, y = general\_beer\_style, col = as.factor(overall))) + geom\_point(alpha = 0.1, shape = 21) + geom\_jitter() + theme\_blue \`\`\`
+ggplot(reviews\_10k, aes(x = beer\_abv, y = general\_beer\_style, col = as.factor(overall))) + geom\_point(alpha = 0.4) + geom\_jitter() + theme\_blue \`\`\`
 
 Do any of the aspects affect the overall rating?
 
