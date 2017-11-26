@@ -2,7 +2,7 @@
 
 title: "Statistical Analysis"
 author: "Sergey Mouzykin"
-date: "November 19, 2017"
+date: "November 25, 2017"
 output: rmarkdown::github_document
 
 ---
