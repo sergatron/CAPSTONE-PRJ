@@ -1,14 +1,12 @@
 ---
 
-title: "Statistical Analysis"
+title: "Beer Reviews: Statistical Analysis"
 author: "Sergey Mouzykin"
-date: "November 19, 2017"
+date: "November 25, 2017"
 output: rmarkdown::github_document
 
 ---
 
-
-Having made these plots, what are some insights you get from them? Do you see any correlations? Is there a hypothesis you would like to investigate further? What other questions do they lead you to ask?
 
 ```{r Libraries and Data Frame, message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
