@@ -23,6 +23,27 @@ beer_reviews = as_data_frame(beer_reviews)
 
 ```{r Functions, message=FALSE, warning=FALSE, include=FALSE}
 
+reds = brewer.pal(9, 'Reds')
+blues = brewer.pal(9, 'Blues')
+theme_blue = theme(panel.background = element_blank(),
+                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.position = 'right',
+                  legend.direction = 'vertical',
+                  strip.background = element_blank(),
+                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
+                  panel.grid = element_line(linetype = 8),
+                  axis.line = element_line(color = "#08519C"),
+                  axis.ticks = element_line(color = "#08519C"),
+                  axis.ticks.x = element_line(color = "black", size = 1),
+                  axis.ticks.y = element_line(color = "black", size = 1),
+                  strip.text = element_text(size = 16, color = 'red'),
+                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  plot.title = element_text(color = 'black', hjust = '0.5'),
+                  axis.text = element_text(color = "black"))
+
+
 stats_function_2 = function(DF, col_name, summary = FALSE){
   # DF has to be a list
   if (summary == TRUE){
@@ -244,32 +265,6 @@ stats_function_2(beer_reviews_style_sd2$palate_sd, 'Palate SD')
 
 ```
 
-
-
-```{r}
-
-reds = brewer.pal(9, 'Reds')
-blues = brewer.pal(9, 'Blues')
-theme_blue = theme(panel.background = element_blank(),
-                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
-                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
-                  legend.position = 'right',
-                  legend.direction = 'vertical',
-                  strip.background = element_blank(),
-                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
-                  panel.grid = element_line(linetype = 8),
-                  axis.line = element_line(color = "#08519C"),
-                  axis.ticks = element_line(color = "#08519C"),
-                  axis.ticks.x = element_line(color = "black", size = 1),
-                  axis.ticks.y = element_line(color = "black", size = 1),
-                  strip.text = element_text(size = 16, color = 'red'),
-                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
-                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
-                  plot.title = element_text(color = 'black', hjust = '0.5'),
-                  axis.text = element_text(color = "black"))
-
-
-```
 
 ### Beer ABV (alcohol by volume)
 
