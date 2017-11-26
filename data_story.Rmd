@@ -3,7 +3,6 @@ title: 'The Beer Story'
 author: "Sergey Mouzykin"
 date: "November 25, 2017"
 output: rmarkdown::github_document
-  
 ---
 
 ### Introduction
@@ -227,7 +226,7 @@ beer_reviews %>%
   arrange(desc(review_count))
 ```
 
-- In total, there are 104 beer styles contained in this dataset and we find the best rated ones by calculating some simple statstics. In particular, we can look at each beer styles' respective beer name and its overall rating. Since we don't have each beer styles individual rating, we are utilizing the given information in the most efficient manner. Here, we calculate the mean, median, and standard deviation for initial insight into the styles. Then, we can use the found information to filter the styles which meet our conditions. 
+- In total, there are 104 beer styles contained in this dataset and we find the best rated ones by calculating some simple statistics. In particular, we can look at each beer styles' respective beer name and its overall rating. Since we don't have each beer styles individual rating, we are utilizing the given information in the most efficient manner. Here, we calculate the mean, median, and standard deviation for initial insight into the styles. Then, we can use the found information to filter the styles which meet our conditions. 
 
 ```{r Beer Style Rating, echo=FALSE, message=FALSE, warning=FALSE}
 # Rating the Beer Styles
@@ -419,6 +418,6 @@ ggplot(reviews_10k, aes(x = appearance, y = overall)) +
 
 Do any of the aspects affect the overall rating? 
 
-- It appears as though the overall rating is affected in a linear manner by other rating such as the taste, aroma, appearance, or palate. Each observation seem to be indepedant of each other. 
+- It appears as though the overall rating is affected in a linear manner by other rating such as the taste, aroma, appearance, or palate. Each observation seem to be independent of each other. 
 
 
