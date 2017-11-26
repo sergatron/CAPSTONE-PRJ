@@ -1,7 +1,10 @@
-The Beer Story
-================
-Sergey Mouzykin
-November 15, 2017
+---
+title: 'The Beer Story'
+author: "Sergey Mouzykin"
+date: "November 25, 2017"
+output: rmarkdown::github_document
+  
+---
 
 ### Introduction
 
@@ -9,376 +12,413 @@ The great beer shortage has driven people to madness. No. That is obviously not 
 
 ### Dataset Preview
 
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(tibble)
+library(RColorBrewer)
+library(ggthemes)
+library(GGally)
+beer_reviews = read_csv("beer_reviews_clean.csv")
+beer_reviews = as_data_frame(beer_reviews)
+```
+
 This data was collected through the website *beeradvocate.com*
 
 This dataset gives us a glimpse at the people's preference for beer. Some may be extreme beer enthusiasts and others are perhaps trying something different to break into the world of beer. In either case, this is a collection of their, roughly 1.5 million, opinions of the beer's physical characteristics such as aroma, appearance, palate, taste, and the overall impression. In addition, included are the brewery name, alcohol content and beer style which may play an important role in selecting an ideal beer.
 
-| Variable           | Description                           |
-|--------------------|---------------------------------------|
-| review time        | Number of times the beer was reviewed |
-| review overall     | Overall rating of the beer            |
-| review aroma       | Aroma rating                          |
-| review appearance  | Appearance rating                     |
-| review profilename | Reviewer's profile name               |
-| review palate      | Palate rating                         |
-| review taste       | Taste rating                          |
-| brewery name       | Name of the brewery                   |
-| brewery ID         | Brewery's identification number       |
-| beer style         | Style of the beer                     |
-| beer name          | Name of the beer                      |
-| beer ABV           | Alcohol content of beer               |
-| beer ID            | Identification number of beer         |
+|Variable|Description|
+|----|----|
+|review time| Number of times the beer was reviewed
+|review overall| Overall rating of the beer 
+|review aroma| Aroma rating
+|review appearance| Appearance rating
+|review profilename| Reviewer's profile name
+|review palate| Palate rating
+|review taste| Taste rating 
+|brewery name| Name of the brewery
+|brewery ID| Brewery's identification number
+|beer style| Style of the beer
+|beer name| Name of the beer
+|beer ABV| Alcohol content of beer
+|beer ID| Identification number of beer
 
-### Limitations
+### Limitations 
 
 Country of Origin
 
--   The country of origin is not defined in this dataset and would require research. This could be an important indicator as to why some beers have a low amount reviews. It's possible that they are only available in certain countries and with limited supplies.
+- The country of origin is not defined in this dataset and would require research. This could be an important indicator as to why some beers have a low amount reviews. It's possible that they are only available in certain countries and with limited supplies. 
+
 
 Beer drinking population
 
--   Considering that some profile names have limited amount of reviews it is possible that some of those people are not beer drinkers but rather are experimenting and recording their experiences. In turn, this may skew the results since they are more likely to disagree on the ratings with someone who is a beer drinker.
+- Considering that some profile names have limited amount of reviews it is possible that some of those people are not beer drinkers but rather are experimenting and recording their experiences. In turn, this may skew the results since they are more likely to disagree on the ratings with someone who is a beer drinker. 
+
 
 ### Cleaning and Wrangling
 
-Before the analysis could begin, this data needed to be cleaned and wrangled. The process involved replacing missing values, changing all characters to lower case, renaming some of the column names, and reducing the amount of beer styles. Missing values were found in three columns containing profile names, alcohol content, and brewery names. The ABV (alcohol content) column, had the most missing values and were replaced with the calculated mean. Missing values within the profile names and brewery names columns were replaced with the string 'unknown'. Some column names contained superfluous information and therefore were renamed to make them short but descriptive. There are 104 beer styles contained within this dataset and were reduced to 24 in order to produce cleaner plots.
+Before the analysis could begin, this data needed to be cleaned and wrangled. The process involved replacing missing values, changing all characters to lower case, renaming some of the column names, and reducing the amount of beer styles. Missing values were found in three columns containing profile names, alcohol content, and brewery names. The ABV (alcohol content) column, had the most missing values and were replaced with the calculated mean. Missing values within the profile names and brewery names columns were replaced with the string 'unknown'. Some column names contained superfluous information and therefore were renamed to make them short but descriptive. There are 104 beer styles contained within this dataset and were reduced to 24 in order to produce cleaner plots. 
 
 ### Data Exploration: The Five Aspects
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plots-1.png)
+```{r Plot Theme Blue, message=FALSE, warning=FALSE, include=FALSE}
+theme_blue = theme(panel.background = element_blank(),
+                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.position = 'right',
+                  legend.direction = 'vertical',
+                  strip.background = element_blank(),
+                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
+                  panel.grid = element_line(linetype = 8),
+                  axis.line = element_line(color = "#08519C"),
+                  axis.ticks = element_line(color = "#08519C"),
+                  axis.ticks.x = element_line(color = "black", size = 1),
+                  axis.ticks.y = element_line(color = "black", size = 1),
+                  strip.text = element_text(size = 16, color = 'red'),
+                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  plot.title = element_text(color = 'black', hjust = '0.5'),
+                  axis.text = element_text(color = "black"))
 
-    ##                    Overall Rating Summary
-    ## standard deviation 0.7206219             
-    ## variance           0.5192959             
-    ## mean               3.815581              
-    ## median             4                     
-    ## max                5                     
-    ## min                0
+stats_function_2 = function(DF, col_name, summary = FALSE){
+  if (summary == TRUE){
+    summary(DF)
+  }
+  else if(summary == FALSE){
+  DF = list(DF)  
+  sd_list     = lapply(DF, sd)
+  var_list    = lapply(DF, var)
+  mean_list   = lapply(DF, mean)
+  median_list = lapply(DF, median)
+  max_list    = lapply(DF, max)
+  min_list    = lapply(DF, min)
+  yy          = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
+  rows        = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
+  columns     = c(col1 = col_name)
+  sd_matrix   = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
+  colnames(sd_matrix) = columns
+  rownames(sd_matrix) = rows
+  sd_matrix
+  }
+}
+```
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plots-2.png)
 
-    ##                    Taste Rating Summary
-    ## standard deviation 0.7319696           
-    ## variance           0.5357795           
-    ## mean               3.79286             
-    ## median             4                   
-    ## max                5                   
-    ## min                1
+```{r Plots, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = overall)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+stats_function_2(beer_reviews$overall, 'Overall Rating Summary')
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plots-3.png)
+ggplot(beer_reviews, aes(x = taste)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+stats_function_2(beer_reviews$taste, 'Taste Rating Summary')
 
-    ##                    Aroma Rating Summary
-    ## standard deviation 0.6976167           
-    ## variance           0.4866691           
-    ## mean               3.735636            
-    ## median             4                   
-    ## max                5                   
-    ## min                1
+ggplot(beer_reviews, aes(x = aroma)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+stats_function_2(beer_reviews$aroma, 'Aroma Rating Summary')
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plots-4.png)
+ggplot(beer_reviews, aes(x = appearance)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+stats_function_2(beer_reviews$appearance, 'Appearance Rating Summary')
 
-    ##                    Appearance Rating Summary
-    ## standard deviation 0.6160928                
-    ## variance           0.3795703                
-    ## mean               3.841642                 
-    ## median             4                        
-    ## max                5                        
-    ## min                0
+ggplot(beer_reviews, aes(x = palate)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+stats_function_2(beer_reviews$palate, 'Palate Rating Summary')
+```
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plots-5.png)
 
-    ##                    Palate Rating Summary
-    ## standard deviation 0.6822184            
-    ## variance           0.4654219            
-    ## mean               3.743701             
-    ## median             4                    
-    ## max                5                    
-    ## min                1
+These histograms (above) summarize the distribution of the five aspects and how they were rated. For all five aspects, we can see that a rating of four was given out quite frequently. In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. This is perfectly reasonable since we all have our own personal preferences which may stem from our diverse backgrounds and personal experiences. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary with the beer name. 
 
-These histograms summarize the distribution of the five aspects and how they were rated. For all five aspects, we can see that a rating of four was given out quite frequently. In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. This is perfectly reasonable since we all have our own personal preferences which may stem from our diverse backgrounds and personal experiences. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary with the beer name.
+```{r Extreme Variation, echo=FALSE, message=FALSE, warning=FALSE}
+# extreme scenario
+beer_reviews_dist = 
+  beer_reviews %>%
+  group_by(beer_name, overall, taste, aroma, appearance, palate) %>%
+  summarise(beer_name_count = n(), 
+            overall_mean = mean(overall), overall_sd = sd(overall)) %>%
+  arrange(overall) %>%
+  filter(overall == 0) %>%
+  print(n = 10)
+```
 
-    ## # A tibble: 7 x 9
-    ## # Groups:   beer_name, overall, taste, aroma, appearance [7]
-    ##                 beer_name overall taste aroma appearance palate
-    ##                     <chr>   <dbl> <dbl> <dbl>      <dbl>  <dbl>
-    ## 1       latter days stout       0   2.0     4          0    2.0
-    ## 2                pub pils       0   2.0     2          0    3.0
-    ## 3      red rock amber ale       0   3.5     3          0    2.5
-    ## 4 red rock bavarian weiss       0   2.0     2          0    2.5
-    ## 5  red rock dunkel weizen       0   2.0     2          0    2.5
-    ## 6        red rock pilsner       0   1.5     2          0    3.0
-    ## 7           utah pale ale       0   2.0     3          0    2.0
-    ## # ... with 3 more variables: beer_name_count <int>, overall_mean <dbl>,
-    ## #   overall_sd <dbl>
+It is interesting to find that in some of the more extreme scenarios (above), the ratings between different aspects vary greatly. In particular, for the beer, *Latter Days Stout*, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. It seems contradictory to rate the overall as a zero while enjoying at least one aspect of the beer, in particular, its aroma. 
 
-It is interesting to find that in some of the more extreme scenarios, the ratings between different aspects vary greatly. In particular, for the beer, *Latter Days Stout*, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. It seems contradictory to rate the overall as a zero while enjoying at least one aspect of the beer, in particular, its aroma.
 
-    ## # A tibble: 21,271 x 8
-    ## # Groups:   beer_name [21,076]
-    ##                                                                     beer_name
-    ##                                                                         <chr>
-    ##  1                                                                  "\"100\""
-    ##  2 achievement beyond life's experiences (a.b.l.e.) (pizza port solana beach)
-    ##  3                                                      acorn old moor porter
-    ##  4                                                        almighty barleywine
-    ##  5                                                       alt german style ale
-    ##  6                                   andechser dunkel naturtrüb jubiläumsbier
-    ##  7                                                 arctic fox chocolate stout
-    ##  8                                                  barrel aged wet hopsickle
-    ##  9                                                 berliner kindl bock dunkel
-    ## 10                                        black marlin porter with cocoa nibs
-    ## 11                                             blue point wet hops experiment
-    ## 12                                                                 bookbinder
-    ## 13                                               brewer's alley trinity stout
-    ## 14                                                    burning oak black lager
-    ## 15                                                               casta oscura
-    ## 16                                                                  chub step
-    ## 17                                            dark apparition - figgie smalls
-    ## 18                                              devassa negra (tropical dark)
-    ## 19                                                        double simcoe smash
-    ## 20                                      duclaw exile 4 (macchiato milk stout)
-    ## # ... with 2.125e+04 more rows, and 7 more variables:
-    ## #   general_beer_style <chr>, beer_name_count <int>, overall_sd <dbl>,
-    ## #   taste_sd <dbl>, aroma_sd <dbl>, appearance_sd <dbl>, palate_sd <dbl>
+```{r Beer name tally, message=FALSE, warning=FALSE, include=FALSE}
+# tally each beer name and calculate SD for the 5 observations
+beer_reviews_SD = 
+  beer_reviews %>%
+  group_by(beer_name, general_beer_style) %>%
+  summarise(beer_name_count = n(),
+            
+            overall_sd    = sd(overall), 
+            taste_sd      = sd(taste),
+            aroma_sd      = sd(aroma), 
+            appearance_sd = sd(appearance), 
+            palate_sd     = sd(palate)) %>%
+  
+  filter(beer_name_count >= 5) %>%
+  arrange(overall_sd)
 
-    ##                    Overall SD
-    ## standard deviation 0.2027035 
-    ## variance           0.04108872
-    ## mean               0.5913669 
-    ## median             0.5700877 
-    ## max                1.917029  
-    ## min                0
+```
 
-    ##                    Taste SD  
-    ## standard deviation 0.1913261 
-    ## variance           0.03660569
-    ## mean               0.5552649 
-    ## median             0.5368359 
-    ## max                1.834848  
-    ## min                0
+```{r Summary Stats, echo=FALSE, message=FALSE, warning=FALSE}
 
-    ##                    Aroma SD  
-    ## standard deviation 0.1630964 
-    ## variance           0.02660042
-    ## mean               0.5177786 
-    ## median             0.5029975 
-    ## max                1.870829  
-    ## min                0
+stats_function_2(beer_reviews_SD$overall_sd, 'Overall SD')
+stats_function_2(beer_reviews_SD$taste_sd, 'Taste SD')
+stats_function_2(beer_reviews_SD$aroma_sd, 'Aroma SD')
+stats_function_2(beer_reviews_SD$appearance_sd, 'Appearance SD')
+stats_function_2(beer_reviews_SD$palate_sd, 'Palate SD')
 
-    ##                    Appearance SD
-    ## standard deviation 0.1556161    
-    ## variance           0.02421637   
-    ## mean               0.4828778    
-    ## median             0.4664237    
-    ## max                1.695582     
-    ## min                0
+```
 
-    ##                    Palate SD 
-    ## standard deviation 0.1713364 
-    ## variance           0.02935616
-    ## mean               0.5415573 
-    ## median             0.5270463 
-    ## max                1.643168  
-    ## min                0
 
-Calculating the deviation for each beer's respective five observations we can have a glimpse at how people may agree or disagree among the five observations. The lower deviation value implies that there is more agreement than disagreement among the reviews, and a higher deviation value implies more disagreement. We can also plot the distribution of these standard deviations and realize that it is highly likely that there will be disagreement among most beers but that disagreement will be relatively small. Ultimately, the beers which have greatest disagreements tend to be the ones with the least amount of reviews. From this, we can infer that those beers, in particular, may be best suited for people with a more developed taste for beer rather than for someone who drinks a beer on a seldom occasion.
+Calculating the deviation (above) for each beer's respective five observations we can have a glimpse at how people may agree or disagree among the five observations. The lower deviation value implies that there is more agreement than disagreement among the reviews, and a higher deviation value implies more disagreement. We can also plot the distribution of these standard deviations and realize that it is highly likely that there will be disagreement among most beers but that disagreement will be relatively small. Ultimately, the beers which have greatest disagreements tend to be the ones with the least amount of reviews. 
 
 ### Data Exploration: Beer Alcohol Content
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plot:%20Beer%20ABV-1.png)
+```{r Plot: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE}
+blues = brewer.pal(6, 'Blues')
+ggplot(beer_reviews, aes(x = beer_abv)) + 
+  geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +
+  scale_y_continuous('Beer Count') +
+  ggtitle('Beer ABV Distribution') +
+  theme_blue
+```
 
 This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
 
-    ##                    Beer ABV
-    ## standard deviation 2.272372
-    ## variance           5.163673
-    ## mean               7.042387
-    ## median             6.6     
-    ## max                57.7    
-    ## min                0.01
 
-| Stat               | Value |
-|--------------------|-------|
-| Standard Deviation | 2.27  |
-| Variance           | 5.16  |
-| Mean               | 7.04  |
-| Median             | 6.6   |
-| Max                | 57.7  |
-| Min                | 0.01  |
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+stats_function_2(beer_reviews$beer_abv, 'Beer ABV')
+
+```
+
+|Stat|Value|
+|----|----|
+|Standard Deviation| 2.27
+|Variance| 5.16
+|Mean| 7.04 
+|Median| 6.6
+|Max| 57.7
+|Min| 0.01 
+
 
 ### Initial Approach
 
 Find the overall rating for each beer style and the most popular beer style.
 
--   To find the most popular beer style we can simply count the amount of times each style was reviewed. In this case, the most reviewed style is the *American IPA* with 117,586 reviews. However, this doesn't tell the entire story. The beer styles with the most amount of reviews may indicate that they are just easier to obtain. It is unfair to assume that each of these beers in the dataset were easily available to everyone who participated. Perhaps, if each beer style was reviewed the same amount of times, then we can make a more accurate conclusion as to which beer style is more popular.
+- To find the most popular beer style we can simply count the amount of times each style was reviewed. In this case, the most reviewed style is the *American IPA* with 117,586 reviews. However, this doesn't tell the entire story. The beer styles with the most amount of reviews may indicate that they are just easier to obtain. It is unfair to assume that each of these beers in the dataset were easily available to everyone who participated. Perhaps, if each beer style was reviewed the same amount of times, then we can make a more accurate conclusion as to which beer style is more popular. 
 
-<!-- -->
 
-    ## # A tibble: 104 x 2
-    ##                          beer_style review_count
-    ##                               <chr>        <int>
-    ##  1                     american ipa       117586
-    ##  2   american double / imperial ipa        85977
-    ##  3          american pale ale (apa)        63469
-    ##  4           russian imperial stout        54129
-    ##  5 american double / imperial stout        50705
-    ##  6                  american porter        50477
-    ##  7         american amber / red ale        45751
-    ##  8          belgian strong dark ale        37743
-    ##  9           fruit / vegetable beer        33861
-    ## 10              american strong ale        31945
-    ## # ... with 94 more rows
+```{r Beer Style: Most Popular, echo=FALSE, message=FALSE, warning=FALSE}
+beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(review_count = n()) %>%
+  arrange(desc(review_count))
+```
 
--   In total, there are 104 beer styles contained in this dataset and we find the best rated ones by calculating some simple statstics. In particular, we can look at each beer styles' respective beer name and its overall rating. Since we don't have each beer styles individual rating, we are utilizing the given information in the most efficient manner. Here, we calculate the mean, median, and standard deviation for initial insight into the styles. Then, we can use the found information to filter the styles which meet our conditions.
+- In total, there are 104 beer styles contained in this dataset and we find the best rated ones by calculating some simple statstics. In particular, we can look at each beer styles' respective beer name and its overall rating. Since we don't have each beer styles individual rating, we are utilizing the given information in the most efficient manner. Here, we calculate the mean, median, and standard deviation for initial insight into the styles. Then, we can use the found information to filter the styles which meet our conditions. 
 
-<!-- -->
+```{r Beer Style Rating, echo=FALSE, message=FALSE, warning=FALSE}
+# Rating the Beer Styles
+beer_style_rating =
+  beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(review_count = n(),
+            overall_mean = mean(overall)) %>%
+  arrange(desc(overall_mean)) %>%
+  print(n = 20)
 
-    ## # A tibble: 104 x 3
-    ##                          beer_style review_count overall_mean
-    ##                               <chr>        <int>        <dbl>
-    ##  1                american wild ale        17794     4.093262
-    ##  2                           gueuze         6009     4.086287
-    ##  3                 quadrupel (quad)        18086     4.071630
-    ##  4               lambic - unblended         1114     4.048923
-    ##  5 american double / imperial stout        50705     4.029820
-    ##  6           russian imperial stout        54129     4.023084
-    ##  7                       weizenbock         9412     4.007969
-    ##  8   american double / imperial ipa        85977     3.998017
-    ##  9                 flanders red ale         6664     3.992722
-    ## 10                         rye beer        10130     3.981737
-    ## 11       keller bier / zwickel bier         2591     3.981088
-    ## 12                          eisbock         2663     3.977094
-    ## 13                     american ipa       117586     3.965221
-    ## 14                             gose          686     3.965015
-    ## 15           saison / farmhouse ale        31480     3.962564
-    ## 16                      belgian ipa        12471     3.958704
-    ## 17                    baltic porter        11572     3.955410
-    ## 18                       roggenbier          466     3.948498
-    ## 19                    oatmeal stout        18145     3.941692
-    ## 20               american black ale        11446     3.934475
-    ## # ... with 84 more rows
+stats_function_2(beer_style_rating$review_count, 'beer style review stats')
+# the median for reviewed amount is 9978, so we can use filter() to narrow the search by looking at beer styles with at least 9978 ratings
 
-    ##                    beer style review stats
-    ## standard deviation 17830.33               
-    ## variance           317920735              
-    ## mean               15255.9                
-    ## median             9978                   
-    ## max                117586                 
-    ## min                241
+beer_style_rating =
+  beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(review_count = n(),
+            overall_mean = mean(overall)) %>%
+  arrange(desc(overall_mean)) %>%
+  filter(review_count >= 9978) %>%
+  print(n = 20)
 
-    ## # A tibble: 52 x 3
-    ##                          beer_style review_count overall_mean
-    ##                               <chr>        <int>        <dbl>
-    ##  1                american wild ale        17794     4.093262
-    ##  2                 quadrupel (quad)        18086     4.071630
-    ##  3 american double / imperial stout        50705     4.029820
-    ##  4           russian imperial stout        54129     4.023084
-    ##  5   american double / imperial ipa        85977     3.998017
-    ##  6                         rye beer        10130     3.981737
-    ##  7                     american ipa       117586     3.965221
-    ##  8           saison / farmhouse ale        31480     3.962564
-    ##  9                      belgian ipa        12471     3.958704
-    ## 10                    baltic porter        11572     3.955410
-    ## 11                    oatmeal stout        18145     3.941692
-    ## 12               american black ale        11446     3.934475
-    ## 13                       hefeweizen        27908     3.929626
-    ## 14                           dubbel        19983     3.921733
-    ## 15                   english porter        11200     3.917946
-    ## 16                           tripel        30328     3.914287
-    ## 17          belgian strong dark ale        37743     3.913322
-    ## 18                          old ale        14703     3.899000
-    ## 19              american barleywine        26728     3.896756
-    ## 20                  american porter        50477     3.895735
-    ## # ... with 32 more rows
 
-    ## [1] 4.298251
+# Looking at beer styles with at least 9978 ratings, we can rate them by calculating the mean of the overall ratings
+# Before deciding on the best beer styles, we should calculate the mean and SD for all overall ratings. Better beer styles should be at least 
+# two SD's away from the mean
+beer_ovr_stats = stats_function_2(beer_style_rating$overall_mean, 'beer style rating stats')
+one_sd = beer_ovr_stats[1]
+brewery_mean = beer_ovr_stats[3]
+as.double(brewery_mean) + 2* as.double(one_sd) # 4.29
+as.double(brewery_mean) + as.double(one_sd) # 4.04
 
-    ## [1] 4.045727
 
-Our search yields the following beer styles:
+```
 
-    ## # A tibble: 0 x 3
-    ## # ... with 3 variables: beer_style <chr>, review_count <int>,
-    ## #   overall_mean <dbl>
+Our search yields the following beer styles as being the best rated:  
 
-    ## # A tibble: 4 x 3
-    ##                         beer_style review_count overall_mean
-    ##                              <chr>        <int>        <dbl>
-    ## 1                american wild ale        17794     4.093262
-    ## 2                 quadrupel (quad)        18086     4.071630
-    ## 3 american double / imperial stout        50705     4.029820
-    ## 4           russian imperial stout        54129     4.023084
+```{r Best Rated Beer Styles, echo=FALSE, message=FALSE, warning=FALSE}
+
+# two standard deviations above the mean is 4.29 Let's filter again to find brewweries at or above 4.29
+beer_style_rating =
+  beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(review_count = n(),
+            overall_mean = mean(overall)) %>%
+  arrange(desc(overall_mean)) %>%
+  filter(review_count >= 9978, overall_mean >= 4.29) %>%
+  print(n = 20)
+# unfortunately, this yields with zero beer styles. Now let's try within one SD and round 4.04 to just 4
+
+beer_style_rating =
+  beer_reviews %>%
+  group_by(beer_style) %>%
+  summarise(review_count = n(),
+            overall_mean = mean(overall)) %>%
+  arrange(desc(overall_mean)) %>%
+  filter(review_count >= 9978, overall_mean >= 4) %>%
+  print(n = 20)
+
+# now the amount of beer styles are reduced to 4. All with an overall mean of at least 4 and reviewed at least 9978 times
+
+```
 
 Which breweries produce the highest rated beers?
 
--   In total, there are 5,740 breweries contained in this dataset and that's a pretty large number of breweries to consider if you want to find the best ones. In this case, the best breweries will be selected by calculating their respective beer's overall rating since we don't actually have any ratings for the individual breweries themselves. Using summary statistics we can shine a light upon breweries which produce the best rated beers.
+- In total, there are 5,740 breweries contained in this dataset and that's a pretty large number of breweries to consider if you want to find the best ones. In this case, the best breweries will be selected by calculating their respective beer's overall rating since we don't actually have any ratings for the individual breweries themselves. Using summary statistics we can shine a light upon breweries which produce the best rated beers. 
+ 
+```{r Brewery Ratings, echo=FALSE, message=FALSE, warning=FALSE}
+# distinct amount of breweries
+beer_reviews %>%
+  select(brewery_name) %>%
+  n_distinct()
 
-<!-- -->
+# Rating the Breweries
+brewery_rating =
+  beer_reviews %>%
+  group_by(brewery_name) %>%
+  summarise(review_count = n(),
+            overall_mean = mean(overall)) %>%
+  arrange(desc(overall_mean)) %>%
+  filter(review_count >= 14) %>%
+  print(n = 20)
+  
+stats_function_2(brewery_rating$review_count, 'brewery review stats')
+# the median for reviewed amount is 14, so we can use filter() to narrow the search by looking at breweries with at least 14 ratings
 
-    ## [1] 5740
+# Looking at breweries with at least 14 ratings, we can rate them by calculating the mean of the overall ratings
+# Before deciding on the best breweries, we should calculate the mean and SD for all overall ratings. Better breweries should be at least 
+# two SD's away from the mean
+brewery_ovr_stats = stats_function_2(brewery_rating$overall_mean, 'brewery rating stats')
+one_sd = brewery_ovr_stats[1]
+brewery_mean = brewery_ovr_stats[3]
+typeof(brewery_mean)
 
-    ## # A tibble: 2,914 x 3
-    ##                                                  brewery_name review_count
-    ##                                                         <chr>        <int>
-    ##  1                                    brauerei zehendner gmbh           28
-    ##  2                                              the alchemist          527
-    ##  3 brouwerij westvleteren (sint-sixtusabdij van westvleteren)         2378
-    ##  4                              u fleku pivovaru a restauraci           30
-    ##  5                    peg's cantina & brewpub / cycle brewing           79
-    ##  6                                        brauerei schumacher           19
-    ##  7                              russian river brewing company        11311
-    ##  8                                    närke kulturbryggeri ab          212
-    ##  9                         badische staatsbrauerei rothaus ag          126
-    ## 10                               quincy ships brewing company           17
-    ## 11                                      brauerei im füchschen           27
-    ## 12                         brauerei zur malzmühle schwartz kg           20
-    ## 13                          founders restaurant & brewing co.           22
-    ## 14                                       de cam geuzestekerij          159
-    ## 15                              thoroughbreds grill & brewing           22
-    ## 16                                   live oak brewing company          584
-    ## 17                                     hill farmstead brewery         1531
-    ## 18                                   brouwerij drie fonteinen         1668
-    ## 19                                 kern river brewing company          929
-    ## 20                              oakham ales / the brewery tap           88
-    ## # ... with 2,894 more rows, and 1 more variables: overall_mean <dbl>
+as.double(brewery_mean) + 2 * as.double(one_sd)  
 
-    ##                    brewery review stats
-    ## standard deviation 2072.578            
-    ## variance           4295578             
-    ## mean               540.1723            
-    ## median             72                  
-    ## max                39444               
-    ## min                14
 
-    ## [1] "list"
+```
 
-    ## [1] 4.381924
+Our search yields the following six breweries which produce the most of the best rated beers:  
+  
+```{r Best Rated Breweries, echo=FALSE, message=FALSE, warning=FALSE}
+# two standard deviations above the mean is 4.38. Let's filter again to find brewweries at or above 4.38
+brewery_rating_filter =
+  beer_reviews %>%
+  group_by(brewery_name) %>%
+  summarise(review_count = n(),
+            overall_mean = mean(overall)) %>%
+  arrange(desc(overall_mean)) %>%
+  filter(review_count >= 14, overall_mean >= 4.38) %>%
+  print(n = 20)
+# now the amount of breweries are reduced to 6. All with an overall mean of at least 4.38
 
-Our search yields the following six breweries:
+```
 
-    ## # A tibble: 6 x 3
-    ##                                                 brewery_name review_count
-    ##                                                        <chr>        <int>
-    ## 1                                    brauerei zehendner gmbh           28
-    ## 2                                              the alchemist          527
-    ## 3 brouwerij westvleteren (sint-sixtusabdij van westvleteren)         2378
-    ## 4                              u fleku pivovaru a restauraci           30
-    ## 5                    peg's cantina & brewpub / cycle brewing           79
-    ## 6                                        brauerei schumacher           19
-    ## # ... with 1 more variables: overall_mean <dbl>
+
 
 How does each aspect, including alcohol content and beer style, affect the overall rating?
 
-![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-1.png)![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-2.png)![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-3.png)![](data_story_files/figure-markdown_github-ascii_identifiers/Plots:%20Beer%20ABV-4.png)
+```{r Plots: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
 
-Do any of the aspects affect the overall rating?
+reviews_10k = sample_n(beer_reviews, size = 10000)
+# Overall vs Beer ABV
+ggplot(reviews_10k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
+  geom_point(alpha = 0.4) +
+  geom_jitter() +
+  theme_blue
+# Overall and Beer ABV distribution
+ggplot(reviews_10k, aes(x = overall, fill = beer_abv_factor)) + 
+  geom_histogram(binwidth = 0.25) +
+  theme_blue
 
--   It appears as though the overall rating is not affected by any other rating such as the taste, aroma, appearance, or palate. Each observation seem to be indepedant of each other.
+# Overall vs Style
+ggplot(reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
+  geom_point(alpha = 0.4) +
+  geom_jitter() + 
+  theme_blue
 
-Does the alcohol content affect any observation rating?
+# Beer ABV vs Style
+ggplot(reviews_10k, aes(x = beer_abv, y = general_beer_style, col = as.factor(overall))) + 
+  geom_point(alpha = 0.4) +
+  geom_jitter() + 
+  theme_blue
+```
 
--   There is no clear correlation between beer's ABV and its impact on any rating. In fact, the histogram shows us that the distribution of the ABV factors are relatively well spread out across the ratings for each observation.
 
-Does the beer style affect any observation rating?
 
--   Again, the histogram shows us that the distribution of the beer styles are relatively well spread out across the ratings for each observation. None of the beer styles tend to cluster around any particular rating value; therefore, we cannot say that there is any correlation between beer style and the ratings.
+Does the alcohol content affect any observation rating? 
+
+- There is no clear correlation between beer's ABV and its impact on any rating. In fact, the histogram shows us that the distribution of the ABV factors are relatively well spread out across the ratings for each observation. 
+
+
+Does the beer style affect any observation rating? 
+
+- Again, the histogram shows us that the distribution of the beer styles are relatively well spread out across the ratings for each observation. None of the beer styles tend to cluster around any particular rating value; therefore, we cannot say definitively that there is any correlation between beer style and the ratings. 
+
+```{r Five aspects, echo=FALSE, message=FALSE, warning=FALSE}
+# palate vs overall
+ggplot(reviews_10k, aes(x = palate, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+# taste vs overall
+ggplot(reviews_10k, aes(x = taste, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+# aroma vs overall
+ggplot(reviews_10k, aes(x = aroma, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+# appearance vs overall
+ggplot(reviews_10k, aes(x = appearance, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+
+```
+
+Do any of the aspects affect the overall rating? 
+
+- It appears as though the overall rating is affected in a linear manner by other rating such as the taste, aroma, appearance, or palate. Each observation seem to be indepedant of each other. 
+
+

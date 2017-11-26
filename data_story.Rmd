@@ -1,7 +1,7 @@
 ---
 title: 'The Beer Story'
 author: "Sergey Mouzykin"
-date: "November 15, 2017"
+date: "November 25, 2017"
 output: rmarkdown::github_document
   
 ---
@@ -21,7 +21,7 @@ library(tibble)
 library(RColorBrewer)
 library(ggthemes)
 library(GGally)
-beer_reviews <- read_csv("beer_reviews_clean.csv")
+beer_reviews = read_csv("beer_reviews_clean.csv")
 beer_reviews = as_data_frame(beer_reviews)
 ```
 
@@ -134,7 +134,7 @@ stats_function_2(beer_reviews$palate, 'Palate Rating Summary')
 ```
 
 
-These histograms summarize the distribution of the five aspects and how they were rated. For all five aspects, we can see that a rating of four was given out quite frequently. In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. This is perfectly reasonable since we all have our own personal preferences which may stem from our diverse backgrounds and personal experiences. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary with the beer name. 
+These histograms (above) summarize the distribution of the five aspects and how they were rated. For all five aspects, we can see that a rating of four was given out quite frequently. In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. This is perfectly reasonable since we all have our own personal preferences which may stem from our diverse backgrounds and personal experiences. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary with the beer name. 
 
 ```{r Extreme Variation, echo=FALSE, message=FALSE, warning=FALSE}
 # extreme scenario
@@ -148,10 +148,10 @@ beer_reviews_dist =
   print(n = 10)
 ```
 
-It is interesting to find that in some of the more extreme scenarios, the ratings between different aspects vary greatly. In particular, for the beer, *Latter Days Stout*, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. It seems contradictory to rate the overall as a zero while enjoying at least one aspect of the beer, in particular, its aroma. 
+It is interesting to find that in some of the more extreme scenarios (above), the ratings between different aspects vary greatly. In particular, for the beer, *Latter Days Stout*, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. It seems contradictory to rate the overall as a zero while enjoying at least one aspect of the beer, in particular, its aroma. 
 
-```{r Summary Stats, echo=FALSE, message=FALSE, warning=FALSE}
 
+```{r Beer name tally, message=FALSE, warning=FALSE, include=FALSE}
 # tally each beer name and calculate SD for the 5 observations
 beer_reviews_SD = 
   beer_reviews %>%
@@ -165,8 +165,11 @@ beer_reviews_SD =
             palate_sd     = sd(palate)) %>%
   
   filter(beer_name_count >= 5) %>%
-  arrange(overall_sd) %>%
-  print(n = 20)
+  arrange(overall_sd)
+
+```
+
+```{r Summary Stats, echo=FALSE, message=FALSE, warning=FALSE}
 
 stats_function_2(beer_reviews_SD$overall_sd, 'Overall SD')
 stats_function_2(beer_reviews_SD$taste_sd, 'Taste SD')
@@ -177,9 +180,7 @@ stats_function_2(beer_reviews_SD$palate_sd, 'Palate SD')
 ```
 
 
-Calculating the deviation for each beer's respective five observations we can have a glimpse at how people may agree or disagree among the five observations. The lower deviation value implies that there is more agreement than disagreement among the reviews, and a higher deviation value implies more disagreement. We can also plot the distribution of these standard deviations and realize that it is highly likely that there will be disagreement among most beers but that disagreement will be relatively small. Ultimately, the beers which have greatest disagreements tend to be the ones with the least amount of reviews. 
-From this, we can infer that those beers, in particular, may be best suited for people with a more developed taste for beer rather than for someone who drinks a beer on a seldom occasion.
-
+Calculating the deviation (above) for each beer's respective five observations we can have a glimpse at how people may agree or disagree among the five observations. The lower deviation value implies that there is more agreement than disagreement among the reviews, and a higher deviation value implies more disagreement. We can also plot the distribution of these standard deviations and realize that it is highly likely that there will be disagreement among most beers but that disagreement will be relatively small. Ultimately, the beers which have greatest disagreements tend to be the ones with the least amount of reviews. 
 
 ### Data Exploration: Beer Alcohol Content
 
@@ -263,7 +264,7 @@ as.double(brewery_mean) + as.double(one_sd) # 4.04
 
 ```
 
-Our search yields the following beer styles:  
+Our search yields the following beer styles as being the best rated:  
 
 ```{r Best Rated Beer Styles, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -327,7 +328,7 @@ as.double(brewery_mean) + 2 * as.double(one_sd)
 
 ```
 
-Our search yields the following six breweries:  
+Our search yields the following six breweries which produce the most of the best rated beers:  
   
 ```{r Best Rated Breweries, echo=FALSE, message=FALSE, warning=FALSE}
 # two standard deviations above the mean is 4.38. Let's filter again to find brewweries at or above 4.38
@@ -373,16 +374,51 @@ ggplot(reviews_10k, aes(x = beer_abv, y = general_beer_style, col = as.factor(ov
   theme_blue
 ```
 
-Do any of the aspects affect the overall rating? 
 
-- It appears as though the overall rating is not affected by any other rating such as the taste, aroma, appearance, or palate. Each observation seem to be indepedant of each other. 
 
 Does the alcohol content affect any observation rating? 
 
 - There is no clear correlation between beer's ABV and its impact on any rating. In fact, the histogram shows us that the distribution of the ABV factors are relatively well spread out across the ratings for each observation. 
 
+
 Does the beer style affect any observation rating? 
 
-- Again, the histogram shows us that the distribution of the beer styles are relatively well spread out across the ratings for each observation. None of the beer styles tend to cluster around any particular rating value; therefore, we cannot say that there is any correlation between beer style and the ratings. 
+- Again, the histogram shows us that the distribution of the beer styles are relatively well spread out across the ratings for each observation. None of the beer styles tend to cluster around any particular rating value; therefore, we cannot say definitively that there is any correlation between beer style and the ratings. 
+
+```{r Five aspects, echo=FALSE, message=FALSE, warning=FALSE}
+# palate vs overall
+ggplot(reviews_10k, aes(x = palate, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+# taste vs overall
+ggplot(reviews_10k, aes(x = taste, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+# aroma vs overall
+ggplot(reviews_10k, aes(x = aroma, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+# appearance vs overall
+ggplot(reviews_10k, aes(x = appearance, y = overall)) + 
+  geom_point(alpha = 0.6) +
+  stat_smooth(method = 'loess', se = TRUE) + 
+  geom_jitter() +
+  theme_blue
+
+
+```
+
+Do any of the aspects affect the overall rating? 
+
+- It appears as though the overall rating is affected in a linear manner by other rating such as the taste, aroma, appearance, or palate. Each observation seem to be indepedant of each other. 
 
 
