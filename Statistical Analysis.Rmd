@@ -371,7 +371,7 @@ cor
 
 Plotting overall against other aspects, we can observe a linear correlation emerging.
 
-# Plot: Distribution of Ratings 
+### Plot: Distribution of Ratings 
 
 These plots below help visualize the rating distribution of the five aspects, overall, taste, aroma, appearance, and palate.
 
