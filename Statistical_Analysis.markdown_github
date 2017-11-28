@@ -11,6 +11,8 @@ title: "Beer Reviews: Statistical Analysis" author: "Sergey Mouzykin" date: "Nov
 
 \`\`\`{r Functions, message=FALSE, warning=FALSE, include=FALSE}
 
+reds = brewer.pal(9, 'Reds') blues = brewer.pal(9, 'Blues') theme\_blue = theme(panel.background = element\_blank(), legend.key = element\_rect(fill = 'gray', color = "\#3182BD", size = 1), legend.background = element\_rect(fill = 'gray', color = "\#3182BD", size = 1), legend.position = 'right', legend.direction = 'vertical', strip.background = element\_blank(), plot.background = element\_rect(fill = 'gray', color = "\#3182BD", size = 2), panel.grid = element\_line(linetype = 8), axis.line = element\_line(color = "\#08519C"), axis.ticks = element\_line(color = "\#08519C"), axis.ticks.x = element\_line(color = "black", size = 1), axis.ticks.y = element\_line(color = "black", size = 1), strip.text = element\_text(size = 16, color = 'red'), axis.title.y = element\_text(color = 'black', hjust = 0.5, face = "italic"), axis.title.x = element\_text(color = 'black', hjust = 0.5, face = "italic"), plot.title = element\_text(color = 'black', hjust = '0.5'), axis.text = element\_text(color = "black"))
+
 stats\_function\_2 = function(DF, col\_name, summary = FALSE){ \# DF has to be a list if (summary == TRUE){ summary(DF) } else if(summary == FALSE){ DF = list(DF)
 sd\_list = lapply(DF, sd) var\_list = lapply(DF, var) mean\_list = lapply(DF, mean) median\_list = lapply(DF, median) max\_list = lapply(DF, max) min\_list = lapply(DF, min) yy = c(sd\_list, var\_list, mean\_list, median\_list, max\_list, min\_list) rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min') columns = c(col1 = col\_name) sd\_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns)) colnames(sd\_matrix) = columns rownames(sd\_matrix) = rows sd\_matrix }
 
@@ -182,30 +184,6 @@ stats\_function\_2(beer\_reviews\_style\_sd2*o**v**e**r**a**l**l*<sub>*s*</sub>*
 
 \`\`\`
 
-``` {r}
-
-reds = brewer.pal(9, 'Reds')
-blues = brewer.pal(9, 'Blues')
-theme_blue = theme(panel.background = element_blank(),
-                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
-                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
-                  legend.position = 'right',
-                  legend.direction = 'vertical',
-                  strip.background = element_blank(),
-                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
-                  panel.grid = element_line(linetype = 8),
-                  axis.line = element_line(color = "#08519C"),
-                  axis.ticks = element_line(color = "#08519C"),
-                  axis.ticks.x = element_line(color = "black", size = 1),
-                  axis.ticks.y = element_line(color = "black", size = 1),
-                  strip.text = element_text(size = 16, color = 'red'),
-                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
-                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
-                  plot.title = element_text(color = 'black', hjust = '0.5'),
-                  axis.text = element_text(color = "black"))
-
-```
-
 ### Beer ABV (alcohol by volume)
 
 This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
@@ -291,8 +269,7 @@ ggplot(beer\_reviews\_10k, aes(x = appearance, y = overall)) + geom\_point(alpha
 
 Plotting overall against other aspects, we can observe a linear correlation emerging.
 
-Plot: Distribution of Ratings
-=============================
+### Plot: Distribution of Ratings
 
 These plots below help visualize the rating distribution of the five aspects, overall, taste, aroma, appearance, and palate.
 
