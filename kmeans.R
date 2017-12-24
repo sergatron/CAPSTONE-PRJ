@@ -148,7 +148,13 @@ comPart(beer_reviews_10k$beer_abv, beerClusters)
 RRand(beer_reviews_10k$brewery_id, beerClusters)
 
 
-
+# reduce the dataset to 10,000 points to make it easier to work with and plot faster
+set.seed(1)
+beer_reviews_10k = sample_n(beer_reviews_1, size = 10000)
+# glimpse(beer_reviews_10k)
+# ---- SCALE ---- 
+beer_reviews_df2 = scale(beer_reviews_10k[1:7])
+glimpse(beer_reviews_df2)
 # create a vector for storing Rand values
 # compute Rand value for each cluster
 r = c()
@@ -161,7 +167,8 @@ for(i in k[,1:15]){
 # build a cluster tibble for k-means 
 k = data_frame(k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15)
 for (i in 1:15){
-  k[i] = kmeans(beer_reviews_df, centers = i, iter.max = 50, nstart = 25)$cluster}
+  k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster}
+
 r1 = randIndex(table(beer_reviews_10k$taste, k$k1))
 r2 = randIndex(table(beer_reviews_10k$taste, k$k2))
 r3 = randIndex(table(beer_reviews_10k$taste, k$k3))
