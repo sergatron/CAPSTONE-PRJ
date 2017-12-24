@@ -2,7 +2,7 @@
 title: "Capstone - Final"
 author: "Sergey Mouzykin"
 date: "December 23, 2017"
-output: rmarkdown::github_document
+output: pdf_document
 ---
 
 ### Introduction 
