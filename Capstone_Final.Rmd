@@ -2,7 +2,7 @@
 title: "Capstone - Final"
 author: "Sergey Mouzykin"
 date: "December 23, 2017"
-output: pdf_document
+output: rmarkdown::github_document
 ---
 
 ### Introduction 
@@ -68,6 +68,51 @@ library(ggthemes)
 beer_reviews = read_csv("beer_reviews_original.csv")
 beer_reviews = as_data_frame(beer_reviews)
 # glimpse(beer_reviews)
+reds = brewer.pal(9, 'Reds')
+blues = brewer.pal(9, 'Blues')
+theme_blue = theme(panel.background = element_blank(),
+                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.position = 'right',
+                  legend.direction = 'vertical',
+                  strip.background = element_blank(),
+                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
+                  panel.grid = element_line(linetype = 8),
+                  axis.line = element_line(color = "#08519C"),
+                  axis.ticks = element_line(color = "#08519C"),
+                  axis.ticks.x = element_line(color = "black", size = 1),
+                  axis.ticks.y = element_line(color = "black", size = 1),
+                  strip.text = element_text(size = 16, color = 'red'),
+                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  plot.title = element_text(color = 'black', hjust = '0.5'),
+                  axis.text = element_text(color = "black"))
+
+
+stats_function_2 = function(DF, col_name, summary = FALSE){
+  # DF has to be a list
+  if (summary == TRUE){
+    summary(DF)
+  }
+  else if(summary == FALSE){
+    DF = list(DF)  
+    sd_list     = lapply(DF, sd)
+    var_list    = lapply(DF, var)
+    mean_list   = lapply(DF, mean)
+    median_list = lapply(DF, median)
+    max_list    = lapply(DF, max)
+    min_list    = lapply(DF, min)
+    yy          = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
+    rows        = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
+    columns     = c(col1 = col_name)
+    sd_matrix   = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
+    colnames(sd_matrix) = columns
+    rownames(sd_matrix) = rows
+    sd_matrix
+  }
+  
+}
+
 ```
 
 
@@ -296,7 +341,7 @@ beer_reviews %>%
 
 Plotting the beer's ABV as a histogram will reveal it's distribution and help us spot any outliers that may be present before diving into deeper analysis.  
 
-```{r Plot: Beer ABV, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Plot: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE}
 #glimpse(beer_reviews)
 blues = brewer.pal(6, 'Blues')
 ggplot(beer_reviews, aes(x = beer_abv)) + 
@@ -304,7 +349,7 @@ ggplot(beer_reviews, aes(x = beer_abv)) +
   scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +
   scale_y_continuous('Beer Count') +
   ggtitle('Beer ABV Distribution') +
-  theme_classic()
+  theme_blue
 
 ```
 
@@ -391,52 +436,8 @@ write_csv(beer_reviews_clean, 'beer_reviews_clean.csv')
 
 This will be a good and simple starting point for finding more complex answers later on. Summary statistics will give us a glimpse into the characteristics of this data set and will guide us towards the next steps. 
 
-```{r Functions, message=FALSE, warning=FALSE, include=FALSE}
-
-reds = brewer.pal(9, 'Reds')
-blues = brewer.pal(9, 'Blues')
-theme_blue = theme(panel.background = element_blank(),
-                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
-                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
-                  legend.position = 'right',
-                  legend.direction = 'vertical',
-                  strip.background = element_blank(),
-                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
-                  panel.grid = element_line(linetype = 8),
-                  axis.line = element_line(color = "#08519C"),
-                  axis.ticks = element_line(color = "#08519C"),
-                  axis.ticks.x = element_line(color = "black", size = 1),
-                  axis.ticks.y = element_line(color = "black", size = 1),
-                  strip.text = element_text(size = 16, color = 'red'),
-                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
-                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
-                  plot.title = element_text(color = 'black', hjust = '0.5'),
-                  axis.text = element_text(color = "black"))
-
-
-stats_function_2 = function(DF, col_name, summary = FALSE){
-  # DF has to be a list
-  if (summary == TRUE){
-    summary(DF)
-  }
-  else if(summary == FALSE){
-    DF = list(DF)  
-    sd_list     = lapply(DF, sd)
-    var_list    = lapply(DF, var)
-    mean_list   = lapply(DF, mean)
-    median_list = lapply(DF, median)
-    max_list    = lapply(DF, max)
-    min_list    = lapply(DF, min)
-    yy          = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
-    rows        = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
-    columns     = c(col1 = col_name)
-    sd_matrix   = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
-    colnames(sd_matrix) = columns
-    rownames(sd_matrix) = rows
-    sd_matrix
-  }
-  
-}
+```{r clean df, message=FALSE, warning=FALSE, include=FALSE}
+beer_reviews = beer_reviews_clean
 
 ```
 
@@ -722,7 +723,7 @@ ggplot(beer_reviews_10k, aes(x = palate, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
-cor.test(reviews_10k$palate, reviews_10k$overall)
+cor.test(beer_reviews$palate, beer_reviews$overall)
 
 # taste vs overall
 ggplot(beer_reviews_10k, aes(x = taste, y = overall)) + 
@@ -730,7 +731,7 @@ ggplot(beer_reviews_10k, aes(x = taste, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
-cor.test(reviews_10k$taste, reviews_10k$overall)
+cor.test(beer_reviews$taste, beer_reviews$overall)
 
 # aroma vs overall
 ggplot(beer_reviews_10k, aes(x = aroma, y = overall)) + 
@@ -738,7 +739,7 @@ ggplot(beer_reviews_10k, aes(x = aroma, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
-cor.test(reviews_10k$aroma, reviews_10k$overall)
+cor.test(beer_reviews$aroma, beer_reviews$overall)
 
 # appearance vs overall
 ggplot(beer_reviews_10k, aes(x = appearance, y = overall)) + 
@@ -746,7 +747,7 @@ ggplot(beer_reviews_10k, aes(x = appearance, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
-cor.test(reviews_10k$appearance, reviews_10k$overall)
+cor.test(beer_reviews$appearance, beer_reviews$overall)
 
 ```
 
@@ -761,23 +762,23 @@ These plots below help visualize the rating distribution of the five aspects, ov
 
 # ------ Histogram Plot -------
 # Overall Rating Distribution
-ggplot(beer_reviews_10k, aes(x = overall)) + 
+ggplot(beer_reviews, aes(x = overall)) + 
   geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
 
-ggplot(beer_reviews_10k, aes(x = taste)) + 
+ggplot(beer_reviews, aes(x = taste)) + 
   geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
 
-ggplot(beer_reviews_10k, aes(x = aroma)) + 
+ggplot(beer_reviews, aes(x = aroma)) + 
   geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
 
-ggplot(beer_reviews_10k, aes(x = appearance)) + 
+ggplot(beer_reviews, aes(x = appearance)) + 
   geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
 
-ggplot(beer_reviews_10k, aes(x = palate)) + 
+ggplot(beer_reviews, aes(x = palate)) + 
   geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
   theme_blue
 
