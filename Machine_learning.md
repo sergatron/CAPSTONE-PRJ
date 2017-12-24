@@ -1,0 +1,20 @@
+Machine Learning
+================
+Sergey Mouzykin
+December 10, 2017
+
+#### How do you frame your main question as a machine learning problem? Is it a supervised or unsupervised problem? If it is supervised, is it a regression or a classification?
+
+-   Sifting through a diverse selection of beers can be quite overwhelming. However, there is a methodical approach that we can take in order to solve this problem. Instinctively, we can come to realize that there exists some type of pattern in our decision making, whether it is selecting your next meal or a beer to go along with it. Through experience of taking in massive amounts of data, our minds have learned how to recognize everyday objects and separate (cluster) them into similar groups. This same technique can be applied specifically for aiding us in selecting a beer. In particular, we can use an unsupervised learning technique such as k-means to classify similarities and cluster them into groups.
+
+#### What are the main features (also called independent variables or predictors) that you'll use?
+
+-   Since the goal is to cluster according to similarites, all neccessary information must be included. This includes the independent variables (provided) such as the five rated characteristics are aroma, palate, taste, appearance, and overall. In addition, the alcohol content and beer styles will play an important role in classisfying similar beers. To add more information, we can calculate the overall grade, count the amount of reviews per beer and per brewery.
+
+#### Which machine learning technique will you use?
+
+-   Since the goal is to group similar objects together, as opposed to predicting an outcome, we can use k-means clustering which is considered to be unsupervised. Once the clusters have been created, we can subset the clusters and look within them for a reasonable recommendation.
+
+#### How will you evaluate the success of your machine learning technique? What metric will you use?
+
+-   To evaluate the accuracy of clustering we can use the randIndex function to measure similarities and plot the outcomes versus the number of clusters. Since k-means is very susceptible to outliers, it is appropriate to try other methods of clustering and distance calculations in order to improve the accuracy. Other methods such as *kkca*, *cclust*, *pam*, and *clara* will be applied and compared to each other to find one with least error as measured by the randIndex.
