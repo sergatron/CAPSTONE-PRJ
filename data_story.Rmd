@@ -391,6 +391,7 @@ ggplot(reviews_10k, aes(x = palate, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
+cor.test(reviews_10k$palate, reviews_10k$overall)
 
 # taste vs overall
 ggplot(reviews_10k, aes(x = taste, y = overall)) + 
@@ -398,6 +399,7 @@ ggplot(reviews_10k, aes(x = taste, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
+cor.test(reviews_10k$taste, reviews_10k$overall)
 
 # aroma vs overall
 ggplot(reviews_10k, aes(x = aroma, y = overall)) + 
@@ -405,6 +407,7 @@ ggplot(reviews_10k, aes(x = aroma, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
+cor.test(reviews_10k$aroma, reviews_10k$overall)
 
 # appearance vs overall
 ggplot(reviews_10k, aes(x = appearance, y = overall)) + 
@@ -412,12 +415,13 @@ ggplot(reviews_10k, aes(x = appearance, y = overall)) +
   stat_smooth(method = 'loess', se = TRUE) + 
   geom_jitter() +
   theme_blue
+cor.test(reviews_10k$appearance, reviews_10k$overall)
 
 
 ```
 
 Do any of the aspects affect the overall rating? 
 
-- It appears as though the overall rating is affected in a linear manner by other rating such as the taste, aroma, appearance, or palate. Each observation seem to be independent of each other. 
+- It appears as though the overall rating is affected in a linear manner by other rating such as the taste, aroma, appearance, or palate. 
 
 
