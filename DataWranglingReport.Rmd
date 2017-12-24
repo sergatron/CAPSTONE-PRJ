@@ -3,6 +3,7 @@ title: 'Capstone Project: Data Wrangling Report'
 author: "Sergey Mouzykin"
 date: "November 21, 2017"
 output:
+
   rmarkdown::github_document
 ---
 ### Overview 

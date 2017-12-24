@@ -1,0 +1,417 @@
+Beer Recommendation System 
+========================================================
+author: Sergey Mouzykin
+date: December 21, 2017
+autosize: true
+
+
+```{r Data Set and Theme, message=FALSE, warning=FALSE, include=FALSE}
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(tibble)
+library(RColorBrewer)
+library(ggthemes)
+library(GGally)
+library(NbClust)
+library(cluster)
+library(flexclust)
+beer_reviews = read_csv("beer_reviews_clean.csv")
+beer_reviews = as_data_frame(beer_reviews)
+
+blues = brewer.pal(6, 'Blues')
+theme_blue = theme(panel.background = element_blank(),
+                  legend.key = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.background = element_rect(fill = 'gray', color = "#3182BD", size = 1),
+                  legend.position = 'right',
+                  legend.direction = 'vertical',
+                  strip.background = element_blank(),
+                  plot.background = element_rect(fill = 'gray', color = "#3182BD", size = 2),
+                  panel.grid = element_line(linetype = 8),
+                  axis.line = element_line(color = "#08519C"),
+                  axis.ticks = element_line(color = "#08519C"),
+                  axis.ticks.x = element_line(color = "black", size = 1),
+                  axis.ticks.y = element_line(color = "black", size = 1),
+                  strip.text = element_text(size = 16, color = 'red'),
+                  axis.title.y = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  axis.title.x = element_text(color = 'black', hjust = 0.5, face = "italic"),
+                  plot.title = element_text(color = 'black', hjust = '0.5'),
+                  axis.text = element_text(color = "black"))
+beer_reviews = 
+  beer_reviews %>%
+  mutate(ovr_grade = (taste + aroma + overall + appearance + palate)/5) 
+# try different data sets for k-mean
+# ---- DATA SET #1: k-means ----
+# add counts of beer name and brewery name
+beer_reviews_1 = 
+  beer_reviews %>%
+  add_count(beer_name) %>%
+  add_count(brewery_name) %>%
+  add_count(profile_name)
+# glimpse(beer_reviews_1)
+# rename the columns of beer_name tally and brewery_name tally
+beer_reviews_1$beer_name_cnt = beer_reviews_1$n
+beer_reviews_1$brewery_name_cnt = beer_reviews_1$nn
+beer_reviews_1$profile_name_cnt = beer_reviews_1$nnn
+# select columns to work with
+beer_reviews_1 = 
+  beer_reviews_1 %>%
+  filter(beer_name_cnt > 350 & brewery_name_cnt > 10000 & profile_name_cnt > 500) %>%
+  select(taste, aroma, appearance, overall, palate,beer_abv, ovr_grade, beer_name_cnt, brewery_name_cnt, profile_name_cnt,  beer_id, brewery_id,          beer_name, brewery_name, beer_abv_factor, beer_style, general_beer_style)
+
+glimpse(beer_reviews_1)
+# ---- CONCLUSION ----
+# CCLUST produces least error and works relatively quickly 
+# PAM also results in a lower error but works much slower
+# ---- SCALE ---- 
+# *** NOTE: 1:7 and 4 clusters have highest Accuracy so far, 0.30
+# WITH: filter(beer_name_cnt > 350 & brewery_name_cnt > 10000 & profile_name_cnt > 500)
+beer_reviews_df = scale(beer_reviews_1[1:7])
+# ---- CCLUST ----
+# ?cclust
+# now use the full data set
+beer_ccl = cclust(beer_reviews_df, k = 4, method = 'hardcl', dist = 'manhattan') 
+randIndex(table(beer_reviews_1$taste, beer_ccl@cluster))# hardcl + manhattan -> 0.3658
+randIndex(table(beer_reviews_1$overall, beer_ccl@cluster))# hardcl + manhattan -> 0.3033
+randIndex(table(beer_reviews_1$ovr_grade, beer_ccl@cluster))# hardcl + manhattan -> 0.2074
+# ---- Summarize the Clusters ----
+# summarize resulting clusters
+beer_ccl@clusinfo
+ccl_clust = beer_ccl@cluster
+beer_reviews_1 %>%
+  mutate(ccl_clust = beer_ccl@cluster) %>%
+  group_by(ccl_clust) %>%
+  summarise_all('mean')
+# Cluster 4 appears to have the highest ratings for taste, aroma, appearance, overall, palate, and overall grade
+# it also has the highest amount of reviews 
+# ***NOTE: running clustering again MAY not return the same cluster number as having the highest ratings. It's not always #4
+glimpse(beer_reviews_1)
+beer_reviews_1_ordered = 
+  beer_reviews_1 %>%
+  select(taste, aroma, appearance, overall, palate,beer_abv, ovr_grade,beer_name, brewery_name, beer_abv_factor, beer_style,
+         general_beer_style, beer_name_cnt, brewery_name_cnt)
+
+# explore contents of the clusters and search through them
+glimpse(beer_reviews_1)
+ccl_clust = beer_ccl@cluster
+beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == 4)
+```  
+ 
+Problem Statement
+========================================================
+
+- Contains about 1.5 million opinions on a large variety of beers
+- Selection can be difficult having so many options
+- Everyone has their own personal preference
+- How do you recommened a beer? 
+- How does one choose a beer? 
+
+Approach
+========================================================
+
+Focus:
+
+1. Find the overall rating for each beer style, beer name, and brewery.
+
+2. How does each aspect, including alcohol content and beer style, affect the overall rating?
+
+3. Recommend some number of beers based on preferred aspects (Ex.: Hefeweizen, taste, aroma). 
+
+Data Set Overview
+========================================================
+
+- Contains about 1.5 million reviews
+- Rated five aspects on scale 0-5
+  - Overall, appearance, aroma, taste, palate
+
+|Variable|Description|
+|----|----|
+|review overall| Overall rating of the beer 
+|review aroma| Aroma rating
+|review appearance| Appearance rating
+|review profilename| Reviewer's profile name
+|review palate| Palate rating
+|review taste| Taste rating 
+|brewery name| Name of the brewery
+|beer style| Style of the beer
+|beer name| Name of the beer
+|beer ABV| Alcohol content of beer
+
+
+Limitations
+========================================================
+Some information that we don't have
+
+Country of Origin
+- Not provided in this dataset
+- This could be an important indicator as to why some beers have a low amount reviews 
+- Some beers may only be available in certain countries and with limited supplies
+
+Beer drinking population
+- Some profile names have low amount of reviews 
+    - May not be beer drinkers
+- This may skew the results 
+    - More likely to disagree on the ratings with someone who is a beer drinker
+    
+Ratings Distribution
+========================================================
+
+Overview
+
+- Five aspects: Overall, taste, aroma, appearance, palate
+- Each rated from 0 (bad) to 5 (great)
+
+  
+Ratings Distribution: Overall
+========================================================
+  
+```{r overall plot, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = overall)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+```
+Ratings Distribution: Taste
+========================================================
+
+```{r taste plot, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = taste)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+```
+
+Ratings Distribution: Aroma
+========================================================
+```{r aroma plot, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = aroma)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+```
+
+
+Ratings Distribution: Appearance
+========================================================
+```{r appearance plot, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = appearance)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+```
+
+
+Ratings Distribution: Palate
+========================================================
+```{r palate plot, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = palate)) + 
+  geom_histogram(binwidth = 0.25, position = 'dodge', fill = '#3182BD', col = 'black') +
+  theme_blue
+```
+
+Alcohol Content (ABV)
+========================================================
+
+- Most beers ABV fall between 5 and 10%
+  - Mean 7.04%
+- Ranges from 0.01 to 57.7%
+  - Very few beers with very high ABV
+
+Plot: Alcohol Content (ABV)
+========================================================
+```{r ABV Plot, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(beer_reviews, aes(x = beer_abv)) + 
+  geom_histogram(binwidth = 0.5, position = 'identity', fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) +
+  scale_y_continuous('Beer Count') +
+  ggtitle('Beer ABV Distribution') +
+  theme_blue
+```
+
+
+Results
+========================================================
+As stated earlier, the focus will be upon:
+
+1. Find the overall rating for each beer style, beer name, and brewery.
+
+2. How does each aspect, including alcohol content and beer style, affect the overall rating?
+
+3. Recommend some number of beers based on preferred aspects (Ex.: Hefeweizen, taste, aroma). 
+
+Results: Beer Style
+========================================================
+Find the overall rating for each beer style
+
+Top 5
+
+|Most Reviews (greatest to least) | Review Count |
+|-------------|-------------|-------------| 
+|American IPA | 117,586 |
+|American Double / Imperial IPA | 85,977 |
+|American Pale Ale (APA)| 63,469 | 
+|Russian Imperial Stout | 54,129 | 
+|American Double / Imperial Stout| 50,705 |
+
+| Highest Rated | Rating |
+|-------------|-------------| 
+| American Wild Ale | 4.093 |
+| Gueuze | 4.086 |
+| Quadrupel | 4.071 |
+| Lambic - Unblended | 4.049 |
+| American Double / Imperial Stout | 4.030 |
+
+Note: Numerically these are top 5, although many more would qualify as being rated very high
+
+Results: Beer Name
+========================================================
+Find the overall rating for each beer name
+Top 5
+
+|Most Reviews (greatest to least) | Reviews |
+|-------------|-------------|
+| 90 Minute IPA | 3290 |
+|Old Rasputin Russian Imperial Stout | 3111 |
+|Sierra Nevada Celebration Ale | 3000 |
+|Two Hearted Ale| 2728 |
+|Arrogant Bastard Ale| 2704 |
+
+| Highest Rated | Beer Style |
+|-------------|--------------|
+| American IPA | American Wild Ale |
+| Dirty Horse | Lambic - Unblended |
+| Southampton Berliner Weisse | Berliner Weissbier |
+| Belgian-Style Barleywine | American Barleywine |
+| Armand'4 Oude Geuze Lente (Spring) | Gueuze | 
+
+Note: Numerically these are top 5, although many more would qualify as being rated very high
+
+Results: Brewery Name
+========================================================
+Find the overall rating for each brewery
+Top 5
+
+|Most Reviews (greatest to least) | Reviews |
+|-------------|-------------|
+| Boston Beer Company (samuel adams) | 39,444 |
+|Dogfish Head Brewery | 33,839 |
+|Stone Brewing Co. | 33,066 |
+|Sierra Nevada Brewing Co.| 28,751 |
+|Bell's Brewery, Inc.| 25,191 |
+
+| Highest Rated | Rating |
+|-------------|--------------|
+| Brauerei Zehendner gmbh | 4.61 |
+| The Alchemist | 4.58 |
+| Brouwerij Westvleteren | 4.54 |
+| U Fleku Pivovaru a Restauraci | 4.52 |
+| Peg's Cantina & Brewpub / Cycle Brewing | 4.51 | 
+
+Note: Numerically these are top 5, although many more would qualify as being rated very high
+
+Results
+========================================================
+How does each aspect, including alcohol content and beer style, affect the overall rating?
+
+
+Results: Alcohol Content and Overall Rating
+========================================================
+How does alcohol content affect the overall rating?
+```{r Plot: Overall vs ABV, echo=FALSE, message=FALSE, warning=FALSE}
+reviews_10k = sample_n(beer_reviews, size = 10000)
+# Overall vs Beer ABV
+ggplot(reviews_10k, aes(x = overall, y = beer_abv, col = general_beer_style)) + 
+  geom_point(alpha = 0.4) +
+  geom_jitter() +
+  theme_blue
+```
+
+- There is no clear correlation between beer's ABV and its impact on any rating
+- Distribution of ABV factors are relatively well spread out across the ratings for each observation 
+
+Results: Beer Style and Five Aspects
+========================================================
+Does the beer style affect any observation rating? 
+```{r Plot: Overall vs Beer Style, echo=FALSE, message=FALSE, warning=FALSE}
+# Overall vs Style
+ggplot(reviews_10k, aes(x = overall, y = general_beer_style, col = beer_abv_factor)) + 
+  geom_point(alpha = 0.4) +
+  geom_jitter() + 
+  theme_blue
+```
+
+- Again, distribution of the beer styles are relatively well spread out across the ratings
+- No clear correlation between beer style and the ratings
+
+
+Results: Five Aspects
+========================================================
+Do any of the aspects affect the overall rating? 
+
+- Overall rating is affected in a linear manner by taste, aroma, appearance, and palate. 
+- Strongest correlation was found between Taste and Overall
+  - Better taste results in better overall rating
+- Strong correlation was also found between Palate and Overall
+
+Beer Recommendations
+========================================================
+
+Make a recommendation based on a single or multiple preferences
+
+Preferences:
+- 5 Aspects: Taste, Appearance, Aroma, Overall, Palate
+- Beer Style (104) or General Beer Style (24)
+- Alcohol Content Levels (Low, Below Normal, Normal, Above Normal, High)
+  - OR numeric (Ex. ABV >= 5 %)
+
+```{r Recommendation, echo=FALSE, message=FALSE, warning=FALSE}
+# ---- RECOMMENDATION ----
+# list of criteria:
+# taste, overall, aroma, palate, appearance, overall grade, beer ABV, beer style
+
+# search for specific criteria
+beer_rec_df = 
+  beer_reviews_1_ordered %>%
+  filter(ovr_grade >= 4.0, taste >= 4.5, general_beer_style == 'lager', beer_abv >= 5)
+
+# analyse the criteria further before recommendation 
+beer_reviews_1_sub = 
+  beer_rec_df %>% 
+  group_by(beer_name) %>%
+  summarise(
+    review_count     = n(),
+    overall_mean     = mean(overall), 
+    taste_mean       = mean(taste),
+    aroma_mean       = mean(aroma), 
+    appearance_mean  = mean(appearance), 
+    palate_mean      = mean(palate),
+    rev_cnt_ovr      = review_count/overall_mean,
+    mean_consistency = (overall_mean + taste_mean + aroma_mean + appearance_mean + palate_mean)/5,
+    
+    overall_sd       = sd(overall), 
+    taste_sd         = sd(taste),
+    aroma_sd         = sd(aroma), 
+    appearance_sd    = sd(appearance), 
+    palate_sd        = sd(palate),
+    sd_consistency   = (overall_sd + taste_sd + aroma_sd + appearance_sd + palate_sd)/5) %>%
+  filter(review_count > 10) %>%
+  arrange(desc(mean_consistency), desc(sd_consistency))
+
+# select random beer from list
+# using sample_n(), generate 5 recommendations
+rec_func = function(df){
+  if (length(df$beer_name) <= 5){
+    head(df)
+  }
+  else if(length(df$beer_name) > 5){
+    head(sample_n(df, 5))
+  }
+  else if (length(df$beer_name) == 0){
+    print('None found')
+  }
+}
+rec_func(beer_reviews_1_sub)
+```
+
+
+
+
+
+
