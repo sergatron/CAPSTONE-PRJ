@@ -12,7 +12,7 @@ search() # current packages loaded
 library(NbClust)
 library(cluster)
 library(flexclust)
-library(factoextra) # clustering algorithms & visualization
+library(help = factoextra) # clustering algorithms & visualization
 beer_reviews = read_csv("beer_reviews_clean.csv")
 beer_reviews = as_data_frame(beer_reviews)
 glimpse(beer_reviews)
@@ -157,7 +157,13 @@ randIndex(table(beer_reviews_10k$ovr_grade, bclr_clust)) # 0.1914
 # CCLUST produces least error and works relatively quickly 
 # PAM also results in a lower error but works much slower
 
+# ---- SCALE ---- 
+# *** NOTE: 1:7 and 4 clusters have highest Accuracy so far, 0.30
+# WITH: filter(beer_name_cnt > 350 & brewery_name_cnt > 10000 & profile_name_cnt > 500)
+beer_reviews_df = scale(beer_reviews_1[1:7])
+
 # ---- CCLUST ----
+# ?cclust
 # now use the full data set
 beer_ccl = cclust(beer_reviews_df, k = 4, method = 'hardcl', dist = 'manhattan') 
 randIndex(table(beer_reviews_1$taste, beer_ccl@cluster))# hardcl + manhattan -> 0.3658
@@ -190,7 +196,7 @@ beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == 4)
 
 # ---- RECOMMENDATION ----
 # list of criteria:
-# beer_style, taste, overall, aroma, palate, appearance, 
+# taste, overall, aroma, palate, appearance, overall grade, beer ABV, beer style
 
 
 # search for specific criteria
@@ -226,7 +232,20 @@ stats_function_2(beer_reviews_1_sub$rev_cnt_ovr, 'sub clus stats')
 
 # select random beer from list
 # using sample_n(), generate 5 recommendations
-head(sample_n(beer_reviews_1_sub, 5))
+rec_func = function(df){
+  if (length(df$beer_name) <= 5){
+    head(df)
+  }
+  else if(length(df$beer_name) > 5){
+    head(sample_n(df, 5))
+  }
+  else if (length(df$beer_name) == 0){
+    print('None found')
+  }
+}
+rec_func(beer_reviews_1_sub)
+
+
 
 
 
