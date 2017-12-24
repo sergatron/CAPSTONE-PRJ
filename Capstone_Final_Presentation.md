@@ -125,7 +125,7 @@ Find the overall rating for each beer style
 Top 5
 
 |Most Reviews (greatest to least) | Review Count |
-|-------------|-------------|-------------| 
+|-------------|-------------|
 |American IPA | 117,586 |
 |American Double / Imperial IPA | 85,977 |
 |American Pale Ale (APA)| 63,469 | 
@@ -235,11 +235,11 @@ Preferences:
 # A tibble: 5 x 15
                     beer_name review_count overall_mean taste_mean
                         <chr>        <int>        <dbl>      <dbl>
-1 great lakes dortmunder gold          107     4.621495   4.556075
-2    samuel adams octoberfest           18     4.500000   4.583333
-3      great lakes eliot ness          107     4.528037   4.574766
-4                dogtoberfest           12     4.416667   4.500000
-5                  the kaiser           54     4.166667   4.518519
+1              brooklyn lager           51     4.480392   4.500000
+2                    festbier           33     4.439394   4.530303
+3                  the kaiser           54     4.166667   4.518519
+4      great lakes eliot ness          107     4.528037   4.574766
+5 great lakes dortmunder gold          107     4.621495   4.556075
 # ... with 11 more variables: aroma_mean <dbl>, appearance_mean <dbl>,
 #   palate_mean <dbl>, rev_cnt_ovr <dbl>, mean_consistency <dbl>,
 #   overall_sd <dbl>, taste_sd <dbl>, aroma_sd <dbl>, appearance_sd <dbl>,
