@@ -1078,7 +1078,7 @@ The accuracy levels appear to be relatively low, ranging from 0.1260 to 0.3013, 
 
 According to the plot, the optimal amount of clusters to use is four which produces an accuracy of 0.3013 for the *taste* using k-means. 
 
-Since k-means is very susceptible to outliers, it is appropriate to try other methods of clustering and distance calculations in order to improve the accuracy. Other methods such as *kkca*, *cclust*, *pam*, and *clara* will be applied and compared to each other to find one with least error. 
+Since k-means is very susceptible to outliers, it is appropriate to try other methods of clustering and distance calculations in order to improve the accuracy. Other methods such as *kcca*, *cclust*, *pam*, and *clara* will be applied and compared to each other to find one with least error. 
 
 ```{r Other methods, echo=FALSE, message=FALSE, warning=FALSE}
 # Try various methods to find least error with Rrand  
@@ -1161,7 +1161,7 @@ Now, to make a recommendation, we can search for specific criteria using the *fi
 
 In the end, out of thousands of choices, this set of five beers will provide a more reasonable selection for the customer.
 
-```{r}
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 # ---- RECOMMENDATION ----
 # list of criteria:
 # taste, overall, aroma, palate, appearance, overall grade, beer ABV, beer style, general beer style
