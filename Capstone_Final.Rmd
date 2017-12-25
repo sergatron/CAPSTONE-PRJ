@@ -65,6 +65,10 @@ library(tidyr)
 library(dplyr)
 library(RColorBrewer)
 library(ggthemes)
+library(NbClust)
+library(cluster)
+library(flexclust)
+library(factoextra)
 beer_reviews = read_csv("beer_reviews_original.csv")
 beer_reviews = as_data_frame(beer_reviews)
 # glimpse(beer_reviews)
@@ -1010,7 +1014,7 @@ wssplot(beer_reviews_df)
 
 Run k-means clustering on the data frame after scaling it and use adjusted rand index for finding the accuracy. The plot will show the optimal amount of clusters with the greatest accuracy. The *taste* is chosen here because it would be time consuming to plot each observation individually. 
 
-```{r}
+```{r K-MEANS, message=FALSE, warning=FALSE, include=FALSE}
 # ---- K-Means ----
 # choose clusters 
 kmc_beer = kmeans(beer_reviews_df, centers = 4, iter.max = 20, nstart = 25)
@@ -1031,12 +1035,20 @@ beer_reviews_10k = sample_n(beer_reviews_1, size = 10000)
 # glimpse(beer_reviews_10k)
 # ---- SCALE ---- 
 beer_reviews_df2 = scale(beer_reviews_10k[1:7])
+
+
+```
+
+```{r PLOT: RandIndex, echo=FALSE, message=FALSE, warning=FALSE}
 # ----- PLOT Rrand ----
 # plot error on y-axis, and number of clusters on x-axis
 # build a cluster tibble for k-means 
-k = data_frame(k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15)
+k = data_frame(1:nrow(beer_reviews_df2)) # specify length of data frame for clusters
 for (i in 1:15){
-  k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster}
+  k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster
+  }
+names(k) = c('k1','k2','k3','k4','k5','k6','k7','k8','k9','k10','k11','k12','k13','k14','k15')
+
 r1 = randIndex(table(beer_reviews_10k$taste, k$k1))
 r2 = randIndex(table(beer_reviews_10k$taste, k$k2))
 r3 = randIndex(table(beer_reviews_10k$taste, k$k3))
@@ -1060,7 +1072,6 @@ clus_num = 1:15
 # plot amount of clusters (x) and Rand value (y)
 plot(clus_num, rand_Ind)
 # this plot indicates that the least error occurs with 4 clusters
-
 ```
 
 The accuracy levels appear to be relatively low, ranging from 0.1260 to 0.3013, depending on the chosen aspect to compute with *taste* having highest and *appearance* having lowest accuracy. This may be due to a number things. For one, outliers can have adverse effects on the clusters' centroids and thus affecting the clusters' composition. Also, having a data set populated with human opinions will naturally created some disagreement around the ratings. This may create additional overlap in clusters and, in turn, result in lower accuracy. 
@@ -1087,8 +1098,8 @@ randIndex(table(beer_reviews_10k$ovr_grade, beer_ccl@cluster)) # 0.2051
 beer_pam = pam(beer_reviews_df2, k = 4, metric = 'manhattan', cluster.only = TRUE)
 #bpam_clust = beer_pam$clustering
 randIndex(table(beer_reviews_10k$taste, beer_pam)) # manhattan -> 0.3783
-randIndex(table(beer_reviews_10k$aroma, bpam_clust)) # 0.2407
-randIndex(table(beer_reviews_10k$ovr_grade, bpam_clust)) # 0.2040
+randIndex(table(beer_reviews_10k$aroma, beer_pam)) # 0.2407
+randIndex(table(beer_reviews_10k$ovr_grade, beer_pam)) # 0.2040
 # ---- CLARA ----
 beer_clara = clara(beer_reviews_df2, k = 4, metric = "manhattan")
 bclr_clust = beer_clara$clustering

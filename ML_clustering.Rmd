@@ -1,3 +1,17 @@
+---
+title: "ML_clustering"
+author: "Sergey Mouzykin"
+date: "December 24, 2017"
+output: html_document
+# output: rmarkdown::github_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 # install.packages('factoextra')
 library(readr)
 library(tidyr)
@@ -6,16 +20,41 @@ library(ggplot2)
 
 # library(EMCluster)
 # detach('package:EMCluster')
-# detach('package:MASS') # MASS comes with a select() function and therefore conflicts with DPLYR::select
-# search() # current packages loaded
+#detach('package:MASS') # MASS comes with a select() function and therefore conflicts with DPLYR::select
+#search() # current packages loaded
 
 library(NbClust)
 library(cluster)
 library(flexclust)
-library(factoextra) # clustering algorithms & visualization
+library(factoextra)
+# library(help = factoextra) # clustering algorithms & visualization
 beer_reviews = read_csv("beer_reviews_clean.csv")
 beer_reviews = as_data_frame(beer_reviews)
 glimpse(beer_reviews)
+
+stats_function_2 = function(DF, col_name, summary = FALSE){
+  # DF has to be a list
+  if (summary == TRUE){
+    summary(DF)
+  }
+  else if(summary == FALSE){
+    DF = list(DF)  
+    sd_list     = lapply(DF, sd)
+    var_list    = lapply(DF, var)
+    mean_list   = lapply(DF, mean)
+    median_list = lapply(DF, median)
+    max_list    = lapply(DF, max)
+    min_list    = lapply(DF, min)
+    yy          = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
+    rows        = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
+    columns     = c(col1 = col_name)
+    sd_matrix   = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
+    colnames(sd_matrix) = columns
+    rownames(sd_matrix) = rows
+    sd_matrix
+  }
+  
+}
 
 beer_reviews = 
   beer_reviews %>%
@@ -46,29 +85,7 @@ beer_reviews_1 =
          beer_name, brewery_name, beer_abv_factor, beer_style, general_beer_style)
 
 glimpse(beer_reviews_1)
-stats_function_2 = function(DF, col_name, summary = FALSE){
-  # DF has to be a list
-  if (summary == TRUE){
-    summary(DF)
-  }
-  else if(summary == FALSE){
-    DF = list(DF)  
-    sd_list     = lapply(DF, sd)
-    var_list    = lapply(DF, var)
-    mean_list   = lapply(DF, mean)
-    median_list = lapply(DF, median)
-    max_list    = lapply(DF, max)
-    min_list    = lapply(DF, min)
-    yy          = c(sd_list, var_list, mean_list, median_list, max_list, min_list)
-    rows        = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min')
-    columns     = c(col1 = col_name)
-    sd_matrix   = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns))
-    colnames(sd_matrix) = columns
-    rownames(sd_matrix) = rows
-    sd_matrix
-  }
-  
-}
+
 # using filter, attempt to remove some of the outliers
 stats_function_2(beer_reviews_1$beer_name_cnt, 'beer') 
 stats_function_2(beer_reviews_1$brewery_name_cnt, 'brewery')
@@ -96,8 +113,9 @@ wssplot <- function(data, nc = 15, seed = 1){
 }
 wssplot(beer_reviews_df)
 
+```
 
-
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 # ---- K-Means ----
 # choose clusters 
 #?kmeans
@@ -120,15 +138,20 @@ beer_reviews_10k = sample_n(beer_reviews_1, size = 10000)
 # ---- SCALE ---- 
 beer_reviews_df2 = scale(beer_reviews_10k[1:7])
 
+
+
+```
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 # ----- PLOT Rrand ----
 # plot error on y-axis, and number of clusters on x-axis
 # build a cluster tibble for k-means 
 k = data_frame(1:nrow(beer_reviews_df2)) # specify length of data frame for clusters
 for (i in 1:15){
   k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster
-}
+  }
 names(k) = c('k1','k2','k3','k4','k5','k6','k7','k8','k9','k10','k11','k12','k13','k14','k15')
-glimpse(k)
+
 r1 = randIndex(table(beer_reviews_10k$taste, k$k1))
 r2 = randIndex(table(beer_reviews_10k$taste, k$k2))
 r3 = randIndex(table(beer_reviews_10k$taste, k$k3))
@@ -153,9 +176,14 @@ nc = 1:15
 plot(nc, rand_Ind)
 # this plot indicates that the least error occurs with 4 clusters
 
+
+
+```
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 # Try various methods to find least error with Rrand  
 # ---- KCCA ----
-beer_kcca = kcca(beer_reviews_df2, k = 4, family=kccaFamily("kmedians"))
+beer_kcca = kcca(beer_reviews_df2, k = 4, family=kccaFamily('kmedians'))
 randIndex(table(beer_reviews_10k$taste, beer_kcca@cluster))# kmedians -> 0.2761
 randIndex(table(beer_reviews_10k$aroma, beer_kcca@cluster))
 randIndex(table(beer_reviews_10k$ovr_grade, beer_kcca@cluster))
@@ -170,10 +198,10 @@ randIndex(table(beer_reviews_10k$ovr_grade, beer_ccl@cluster)) # 0.2051
 beer_pam = pam(beer_reviews_df2, k = 4, metric = 'manhattan', cluster.only = TRUE)
 #bpam_clust = beer_pam$clustering
 randIndex(table(beer_reviews_10k$taste, beer_pam)) # manhattan -> 0.3783
-randIndex(table(beer_reviews_10k$aroma, bpam_clust)) # 0.2407
-randIndex(table(beer_reviews_10k$ovr_grade, bpam_clust)) # 0.2040
+randIndex(table(beer_reviews_10k$aroma, beer_pam)) # 0.2407
+randIndex(table(beer_reviews_10k$ovr_grade, beer_pam)) # 0.2040
 # ---- CLARA ----
-beer_clara = clara(beer_reviews_df2, k = 4, metric = "manhattan")
+beer_clara = clara(beer_reviews_df2, k = 4, metric = 'manhattan')
 bclr_clust = beer_clara$clustering
 randIndex(table(beer_reviews_10k$taste, bclr_clust)) # manhattan -> 0.3071
 randIndex(table(beer_reviews_10k$aroma, bclr_clust)) # 0.2256
@@ -270,11 +298,5 @@ rec_func = function(df){
   }
 }
 rec_func(beer_reviews_1_sub)
-
-
-
-
-
-
-
+```
 
