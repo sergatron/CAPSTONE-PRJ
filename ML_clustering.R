@@ -166,7 +166,7 @@ randIndex(table(beer_reviews_10k$taste, beer_ccl@cluster))# hardcl + manhattan -
 randIndex(table(beer_reviews_10k$aroma, beer_ccl@cluster)) # 0.2346
 randIndex(table(beer_reviews_10k$ovr_grade, beer_ccl@cluster)) # 0.2051
 # ---- PAM ----
-#clusplot(beer.pam)
+#clusplot(beer_pam)
 beer_pam = pam(beer_reviews_df2, k = 4, metric = 'manhattan', cluster.only = TRUE)
 #bpam_clust = beer_pam$clustering
 randIndex(table(beer_reviews_10k$taste, beer_pam)) # manhattan -> 0.3783
