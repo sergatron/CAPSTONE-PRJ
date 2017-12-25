@@ -1083,7 +1083,7 @@ Since k-means is very susceptible to outliers, it is appropriate to try other me
 ```{r Other methods, echo=FALSE, message=FALSE, warning=FALSE}
 # Try various methods to find least error with Rrand  
 # ---- KCCA ----
-beer_kcca = kcca(beer_reviews_df2, k = 4, family=kccaFamily("kmedians"))
+beer_kcca = kcca(beer_reviews_df2, k = 4, family=kccaFamily('kmedians'))
 randIndex(table(beer_reviews_10k$taste, beer_kcca@cluster))# kmedians -> 0.2761
 randIndex(table(beer_reviews_10k$aroma, beer_kcca@cluster))
 randIndex(table(beer_reviews_10k$ovr_grade, beer_kcca@cluster))
@@ -1094,14 +1094,14 @@ randIndex(table(beer_reviews_10k$taste, beer_ccl@cluster))# hardcl + manhattan -
 randIndex(table(beer_reviews_10k$aroma, beer_ccl@cluster)) # 0.2346
 randIndex(table(beer_reviews_10k$ovr_grade, beer_ccl@cluster)) # 0.2051
 # ---- PAM ----
-#clusplot(beer.pam)
+#clusplot(beer_pam)
 beer_pam = pam(beer_reviews_df2, k = 4, metric = 'manhattan', cluster.only = TRUE)
 #bpam_clust = beer_pam$clustering
 randIndex(table(beer_reviews_10k$taste, beer_pam)) # manhattan -> 0.3783
 randIndex(table(beer_reviews_10k$aroma, beer_pam)) # 0.2407
 randIndex(table(beer_reviews_10k$ovr_grade, beer_pam)) # 0.2040
 # ---- CLARA ----
-beer_clara = clara(beer_reviews_df2, k = 4, metric = "manhattan")
+beer_clara = clara(beer_reviews_df2, k = 4, metric = 'manhattan')
 bclr_clust = beer_clara$clustering
 randIndex(table(beer_reviews_10k$taste, bclr_clust)) # manhattan -> 0.3071
 randIndex(table(beer_reviews_10k$aroma, bclr_clust)) # 0.2256
@@ -1171,7 +1171,7 @@ beer_rec_df =
   beer_reviews_1_ordered %>%
   filter(general_beer_style == 'lager', beer_abv_factor == 'normal')
 
-# analyse the criteria further before recommendation 
+# analyse the criteria df further before recommendation 
 beer_reviews_1_sub = 
   beer_rec_df %>% 
   group_by(beer_name) %>%
@@ -1192,10 +1192,7 @@ beer_reviews_1_sub =
     palate_sd        = sd(palate),
     sd_consistency   = (overall_sd + taste_sd + aroma_sd + appearance_sd + palate_sd)/5) %>%
   filter(review_count > 10) %>%
-  arrange(desc(mean_consistency), desc(sd_consistency))
-
-stats_function_2(beer_reviews_1_sub$rev_cnt_ovr, 'sub clus stats')
-
+  arrange(desc(overall_mean), desc(taste_mean), desc(aroma_mean), desc(appearance_mean), desc(palate_mean))
 
 # select random beer from list
 # using sample_n(), generate 5 recommendations
