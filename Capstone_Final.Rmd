@@ -2,7 +2,7 @@
 title: "Capstone - Final"
 author: "Sergey Mouzykin"
 date: "December 23, 2017"
-output: rmarkdown::github_document
+output: word_document
 ---
 
 ### Introduction 
@@ -139,6 +139,7 @@ beer_style    = tolower(beer_reviews$beer_style)
 ```
 
 Rename Columns
+
 - Some columns need to be renamed in order to be more concise. The changes are summarized in the table below. 
 
 |Old Name|New Name|
@@ -938,10 +939,12 @@ beer_reviews =
 ```
 
 Goals:
+
 - Create clusters based on similarities among beers
 - Find optimal amount of clusters with the least amount of error
 
 Approach:
+
 - Create multiple data sets with varying information for applying clustering
 - For each data set, select columns for clustering
   - Iterate multiple times in order to find the least amount of error
