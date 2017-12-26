@@ -165,10 +165,11 @@ for(i in k[,1:15]){
 # ----- PLOT Rrand ----
 # plot error on y-axis, and number of clusters on x-axis
 # build a cluster tibble for k-means 
-k = data_frame(k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15)
+k = data_frame(1:nrow(beer_reviews_df2)) # specify length of data frame for clusters
 for (i in 1:15){
-  k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster}
-
+  k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster
+}
+names(k) = c('k1','k2','k3','k4','k5','k6','k7','k8','k9','k10','k11','k12','k13','k14','k15')
 r1 = randIndex(table(beer_reviews_10k$taste, k$k1))
 r2 = randIndex(table(beer_reviews_10k$taste, k$k2))
 r3 = randIndex(table(beer_reviews_10k$taste, k$k3))
