@@ -17,7 +17,6 @@ Another possible client can a brewery or distributor. A brewery will most certai
 
 
 ### Beer Reviews Data Set 
-What data are you going to use for this? How will you acquire this data?
 
 The data set is a collection of about 1.5 million beer reviews from a period of about 10 years up to 2011. Reviewers were tasked with rating a beer's five aspects such as appearance, aroma, palate, taste and overall impression based on a (1-5) scale. This data set was acquired from data.world [link](https://data.world/socialmediadata/beeradvocate).
 
@@ -44,18 +43,17 @@ To begin with, the goal is to focus on a select number of questions to answer in
 
 1. Find the overall rating for each beer style and the most popular beer style.
   a. Which breweries produce the highest rated beers?
-In order answer this question, the following techniques will be applied, summary statistics, bar charts, and histograms.
   
 2. How does each aspect, including alcohol content and beer style, affect the overall rating?
   a. Create groups for alcohol level (low, medium, high)
-The following techniques can be applied, linear regression (beer strength vs. ratings), and a histogram of particular features of each beer.
-  
+
 3. Recommend five beers based on preferred aspects and style (Ex.: Hefeweizen, taste, aroma, ABV). 
-Machine learning application will be necessary for providing a recommendation. In general, a variety of clustering methods will be applied to find similarities between various beers and their characteristics. 
+
+In order answer these questions, the following techniques will be applied, summary statistics, bar charts, and histograms. Machine learning application will be necessary for providing a recommendation. In general, a variety of clustering methods will be applied to find similarities between various beers and their characteristics. 
 
 Things to consider:
-* Outliers. Some beers may have a low amount of reviews which may skew results adversely and therefore should be discounted. The cutoff needs to be determined. 
-* Missing values. Why are they missing? Can they teach us anything? Will they have a great impact on the overall ratings? 
+- Outliers. Some beers may have a low amount of reviews which may skew results adversely and therefore should be discounted. The cutoff needs to be determined. 
+- Missing values. Why are they missing? Can they teach us anything? Will they have a great impact on the overall ratings? 
 
 
 ```{r Libraries and Data Frame, message=FALSE, warning=FALSE, include=FALSE}
@@ -221,15 +219,15 @@ Missing values are found in the following columns:
 
 |Column|Amount of missing values|
 |----|----|
-|brewery name| 15
-|beer ABV| 67,785
-|profile name| 348 
+|brewery name| 15|
+|beer ABV| 67,785|
+|profile name| 348 |
 
-The alcohol content is not always written on the container and relatively low ABV is not required to be printed on containers. This may explain the large amount of missing values in the beer_abv column.
+The alcohol content is not always written on the container and relatively low ABV is not required to be printed on containers. This may explain the large amount of missing values in the *beer_abv* column.
 
 ### Missing Values: beer ABV (alcohol by volume)
 
-To deal with these missing values, the mean of the beer_abv will be computed and used to replace the missing values. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result. 
+To deal with these missing values, the mean of the *beer_abv* will be computed and used to replace the missing values. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result. 
 
 ```{r ABV and mean, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -357,16 +355,16 @@ ggplot(beer_reviews, aes(x = beer_abv)) +
 
 ```
 
-This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
+This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean as the outliers have a greater effect on the mean than the median. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
 
 |Stat|Value|
 |----|----|
-|Standard Deviation| 2.27
-|Variance| 5.16
-|Mean| 7.04 
-|Median| 6.6
-|Max| 57.7
-|Min| 0.01 
+|Standard Deviation| 2.27 |
+|Variance| 5.16|
+|Mean| 7.04 |
+|Median| 6.6|
+|Max| 57.7|
+|Min| 0.01 |
 
 ```{r Max and Min for beer ABV, echo=TRUE, message=FALSE, warning=FALSE}
 # find max and min for beer ABV
@@ -377,7 +375,7 @@ min(beer_reviews$beer_abv) # 0.01 %
 
 ### Interval: Beer ABV
 
-In order to better visualize the alcohol level content, the ABV can be distributed into five factored levels using the calculated mean and standard deviation. These five levels will be labeled as, 'low', 'below normal', 'normal', 'above normal', and 'high'. The computed standard deviation will be used to create the breaks for the labels. 
+In order to better visualize the alcohol level content, the ABV can be distributed into five factored levels using the calculated mean and standard deviation. These five levels will be labeled as, '*low*', '*below normal*', '*normal*', *'above normal*', and '*high*'. The computed standard deviation will be used to create the breaks for the labels. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -404,7 +402,7 @@ interval_abv = cut(abv_vector,
 table(interval_abv)
 ```
 
-Sum the amounts within two standard deviations and divide by total amount of rows. This will contain about 95% of all the data points in the beer's abv. column
+Sum the amounts within two standard deviations and divide by total amount of rows. This will contain about 95% of all the data points in the beer's abv column.
 ```{r Beer ABV: Normal, echo=FALSE, message=FALSE, warning=FALSE}
 (140735 + 1193157 + 200598) / length(abv_vector) * 100 # 0.9671
 ```
@@ -438,7 +436,7 @@ write_csv(beer_reviews_clean, 'beer_reviews_clean.csv')
 
 ### Summary Statistics
 
-This will be a good and simple starting point for finding more complex answers later on. Summary statistics will give us a glimpse into the characteristics of this data set and will guide us towards the next steps. 
+This will be a good and simple starting point for finding more complex answers later on. Summary statistics will give us a glimpse into the characteristics of this data set and will guide us toward the next steps. 
 
 ```{r clean df, message=FALSE, warning=FALSE, include=FALSE}
 beer_reviews = beer_reviews_clean
@@ -545,7 +543,7 @@ stats_function_2(beer_reviews_SD$palate_sd, 'Palate SD Summary')
 
 Additionally, a filter can be created to find beers with the smallest deviation. This will return a list of beers which reviewers are more likely to agree upon with their ratings. 
 
-```{r Filter: 5 Deviations, message=FALSE, warning=FALSE, include=FALSE}
+```{r Filter: 5 Deviations, echo=TRUE, message=FALSE, warning=FALSE}
 # NOTE: 
 # with only 1 or 2 reviews, disagreements vary greatly among the 5 observations
 # 1. lower deviation implies agreement between different reviews
@@ -650,9 +648,9 @@ stats_function_2(beer_reviews_style_sd2$palate_sd, 'Palate Stats')
 
 ### Plot: Beer ABV (alcohol by volume)
 
-This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
+This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean since the mean can easily be affected by outliers. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
 
-```{r}
+```{r ABV Plot, message=FALSE, warning=FALSE}
 # reduce the amount of data points with the sample_n()
 # this will produce the plots much faster than plotting all 1.5 million reviews
 beer_reviews_10k = sample_n(beer_reviews, size = 10000)
@@ -671,7 +669,7 @@ stats_function_2(beer_reviews$beer_abv, 'Beer ABV Summary')
 ggplot(beer_reviews_10k, aes(x = as.factor(overall), fill = general_beer_style)) +
   geom_histogram(binwidth = 15, stat = 'count') +
   #scale_x_continuous(limits = c(1,20)) + 
-  theme_classic()
+  theme_blue
 
 # ABV factor and beer style
 ggplot(beer_reviews_10k, aes(x = beer_abv_factor, fill = general_beer_style)) + 
@@ -685,7 +683,7 @@ ggplot(beer_reviews_10k, aes(x = beer_abv_factor, fill = general_beer_style)) +
 
 
 
-```{r}
+```{r Plots, echo=FALSE, message=FALSE, warning=FALSE}
 
 # --- Point Plot
 # overall vs. beer ABV, colored by beer style
@@ -762,7 +760,7 @@ Plotting overall against other aspects, we can observe a linear correlation emer
 
 These plots below help visualize the rating distribution of the five aspects, overall, taste, aroma, appearance, and palate.
 
-```{r}
+```{r Histograms, echo=FALSE, message=FALSE, warning=FALSE}
 
 # ------ Histogram Plot -------
 # Overall Rating Distribution
@@ -790,7 +788,7 @@ ggplot(beer_reviews, aes(x = palate)) +
 
 ### Brewery Names: Rate the breweries
 
-Let's rate the breweries based on the amount of times a beer from that brewery was reviewed. 
+Let's rate the breweries based on the amount of times a beer from that brewery was reviewed. In total, there are 5,740 distinct breweries included in this data set.
 
 ```{r Brewery Names, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -877,11 +875,8 @@ Now, out of 5,740 breweries contained in this data set we have found five which 
 
 ### Profile Names
 
-Here we can find the summary statistics for the profile names columns. 
-
-Amount of profile names: 33,388
-
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+Here we can find the summary statistics for the profile names columns. In total, there are 33,388 people who submitted reviews. 
+```{r Profile Names, echo=TRUE, message=FALSE, warning=FALSE}
 # number of profile names
 beer_reviews %>% 
   select(profile_name) %>% 
@@ -934,7 +929,7 @@ From the *Profile Name* column, we can conclude that most people rated a beer wi
 
 ### Machine Learning 
 
-Since the goal is to cluster according to similarities, all necessary information must be included. This includes the independent variables (provided) such as the five rated characteristics are aroma, palate, taste, appearance, and overall. In addition, the alcohol content and beer styles will play an important role in classifying similar beers. To add more information, we can calculate the overall grade, count the amount of reviews per beer and per brewery. 
+Since the goal is to cluster according to similarities, all necessary information must be included. This includes the independent variables (provided) such as the five rated aspects are aroma, palate, taste, appearance, and overall. In addition, the alcohol content and beer styles will play an important role in classifying similar beers. To add more information, we can calculate the overall grade, count the amount of reviews per beer and per brewery. 
 
 ```{r Mutate, message=FALSE, warning=FALSE, include=FALSE}
 beer_reviews = 
@@ -943,18 +938,17 @@ beer_reviews =
 ```
 
 Goals:
-* Create clusters based on similarities among beers
-* Find optimal amount of clusters
-* Have the least amount of error
+- Create clusters based on similarities among beers
+- Find optimal amount of clusters with the least amount of error
 
 Approach:
-* Create multiple data sets for applying clustering
-* Select columns for clustering
-  - Make multiple attempts in order to find the least amount of error. Specific set of columns should produce the least error
-* Start with *k-means* technique, then *kcca*, *cclust*, *pam*, and *clara*
-* Test for error using Rrand() to find optimal amount of clusters
+- Create multiple data sets with varying information for applying clustering
+- For each data set, select columns for clustering
+  - Iterate multiple times in order to find the least amount of error
+- Start with *k-means* technique, then *kcca*, *cclust*, *pam*, and *clara*
+- Test for error using Rrand() to find optimal amount of clusters
   - Plot Rrand() on the y-axis and the number of clusters on y-axis
-* Repeat until the least amount of error and optimal amount of clusters are found 
+- Repeat until the least amount of error and optimal amount of clusters are found 
 
 ```{r Data Final Prep, message=FALSE, warning=FALSE, include=FALSE}
 # try different data sets for k-mean
@@ -974,12 +968,15 @@ beer_reviews_1$profile_name_cnt = beer_reviews_1$nnn
 beer_reviews_1 = 
   beer_reviews_1 %>%
   filter(beer_name_cnt > 350 & brewery_name_cnt > 10000 & profile_name_cnt > 500) %>%
-  select(taste, aroma, appearance, overall, palate,beer_abv, ovr_grade, beer_name_cnt, brewery_name_cnt, profile_name_cnt,  beer_id, brewery_id, 
-         beer_name, brewery_name, beer_abv_factor, beer_style, general_beer_style)
+  select(taste, aroma, appearance, overall, palate,beer_abv, ovr_grade, beer_name_cnt, brewery_name_cnt,
+         profile_name_cnt,beer_id,brewery_id,beer_name, brewery_name, beer_abv_factor, beer_style, general_beer_style) 
+         
 glimpse(beer_reviews_1)
 ```
 
-Since k-means is very susceptible to outliers, it is best to try and reduce them by setting some specific filters but without completely eliminating them. The effect of outliers can be seen by calculating the mean and median. Outliers will create disparity between the two by skewing the distribution towards the mean. Adding filters through trial and error, observe the mean and median converge. This convergence is due to outliers having less skewing effect on the mean. 
+After multiple iterations, this data set proved to have the least amount of error based on the adjusted rand index (ARI). 
+
+Since k-means is very susceptible to outliers, it is best to try and reduce them by setting some specific filters but without completely eliminating them. The effect of outliers can be seen by calculating the mean and median. Outliers will create disparity between the two by skewing the distribution towards the mean. Adding filters through trial and error, observe the mean and median converge. This convergence is due to outliers having less effect on the mean. 
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 # using filter, attempt to remove some of the outliers
@@ -992,7 +989,7 @@ stats_function_2(beer_reviews_1$beer_abv, 'abv')
 
 
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r WSS plot, echo=FALSE, message=FALSE, warning=FALSE}
 # ---- SCALE ---- 
 # *** NOTE: columns 1:7 and 4 clusters have highest Accuracy so far using k-means, 0.30
 # WITH: filter(beer_name_cnt > 350 & brewery_name_cnt > 10000 & profile_name_cnt > 500)
@@ -1012,7 +1009,7 @@ wssplot <- function(data, nc = 15, seed = 1){
 wssplot(beer_reviews_df)
 ```
 
-Run k-means clustering on the data frame after scaling it and use adjusted rand index for finding the accuracy. The plot will show the optimal amount of clusters with the greatest accuracy. The *taste* is chosen here because it would be time consuming to plot each observation individually. 
+Run k-means clustering on the data frame after scaling it and use adjusted rand index (ARI) for finding the accuracy. The plot will show the optimal amount of clusters with the greatest accuracy. The *taste* is chosen here because it would be time consuming to plot each observation individually. 
 
 ```{r K-MEANS, message=FALSE, warning=FALSE, include=FALSE}
 # ---- K-Means ----
@@ -1035,8 +1032,6 @@ beer_reviews_10k = sample_n(beer_reviews_1, size = 10000)
 # glimpse(beer_reviews_10k)
 # ---- SCALE ---- 
 beer_reviews_df2 = scale(beer_reviews_10k[1:7])
-
-
 ```
 
 ```{r PLOT: RandIndex, echo=FALSE, message=FALSE, warning=FALSE}
@@ -1133,7 +1128,8 @@ randIndex(table(beer_reviews_1$ovr_grade, beer_ccl@cluster))# hardcl + manhattan
 # extract cluster info and summarize resulting clusters
 beer_ccl@clusinfo
 ccl_clust = beer_ccl@cluster
-beer_reviews_1 %>%
+cluster_smry = 
+  beer_reviews_1 %>%
   mutate(ccl_clust = beer_ccl@cluster) %>%
   group_by(ccl_clust) %>%
   summarise_all('mean')
@@ -1197,7 +1193,7 @@ beer_reviews_1_sub =
     appearance_sd    = sd(appearance), 
     palate_sd        = sd(palate),
     sd_consistency   = (overall_sd + taste_sd + aroma_sd + appearance_sd + palate_sd)/5) %>%
-  filter(review_count > 10) %>%
+  filter(review_count >= 10) %>%
   arrange(desc(overall_mean), desc(taste_mean), desc(aroma_mean), desc(appearance_mean), desc(palate_mean))
 
 # select random beer from list
@@ -1221,9 +1217,9 @@ rec_func(beer_reviews_1_sub)
 
 This recommendation system is far from perfect and can greatly benefit from further research. Current accuracy levels are relatively low and could use improvement. Other machine learning techniques such as decision trees or k-nearest neighbors can be applied with the same goal of classification. Optionally, multiple methods can be combined together to further improve accuracy in classifying this data set. 
 
+Another way that a recommendation system can be created is based on the profile names. Since people tend to have personal preferences, it is quite likely that the profile names share similar tastes. By finding and comparing patterns for preferences across all profile names we can find similarities and create recommendations based on those similarities. 
 
-
-Logistic regression can also be applied in predicting whether someone will *like* or *dislike* (a binary outcome) a recommended beer. However, a *like* and *dislike* would have to be defined clearly. For example, we can try to predict whether the customer will rate the recommended beer higher or lower than the mean.
+Logistic regression can also be applied in predicting whether someone will *like* or *dislike* (a binary outcome) a recommended beer. However, a *like* and *dislike* would have to be defined clearly. For example, we can try to predict whether the customer will rate the recommended beer higher or lower than the mean. The results can then be used to modify the model and improve performance. 
 
 
 ### Applying Results
@@ -1232,11 +1228,9 @@ Logistic regression can also be applied in predicting whether someone will *like
  
 2. From the perspective of the beer distributors and manufacturers these results may also be used to improve sales. Although people have diverse preferences, these results give us a glimpse as to which beers are the most popular among people and this can certainly be advantageous to distributors and manufacturers. Essentially, by finding the most popular beers we can see which beers have the greatest demand. Also, since this data set includes many seasonal beers, it would be useful to predict each beer's demand for each season. From here, the supply can be adjusted to maximize profits. 
  
-3. These findings can be used in other areas that involve classification. With some modifications, this recommendation system can be used for classifying restaurant reviews and recommending different places to eat. Further, the two recommendations can be combined together into a single easy-to-use phone app. Altogether, it will become much easier to find the perfect place for dining with a perfect beer for pairing. 
+3. An application developer or a website/blog comprised of beer enthusiasts with a successful recommendation system may benefit from increased traffic to their domain. From the perspective of a customer, anyone with a desire in finding a great beer to try with their next meal will certainly be attracted to a website/blog or an application with a solid recommendation system. Additionally, these findings can be used in other areas that involve classification. With some modifications, this recommendation system can be used for classifying restaurant reviews and recommending different places to eat. Further, the two recommendations can be combined together into a single easy-to-use application. Altogether, it will become much easier to find the perfect place for dining with a perfect beer for pairing. 
 
 
- 
- 
  
  
  

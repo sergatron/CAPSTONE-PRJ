@@ -5,6 +5,9 @@ date: December 21, 2017
 autosize: true
 
 
+ 
+Problem Statement
+========================================================
 ```{r Data Set and Theme, message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
 library(readr)
@@ -79,7 +82,8 @@ randIndex(table(beer_reviews_1$ovr_grade, beer_ccl@cluster))# hardcl + manhattan
 # summarize resulting clusters
 beer_ccl@clusinfo
 ccl_clust = beer_ccl@cluster
-beer_reviews_1 %>%
+cluster_smry = 
+  beer_reviews_1 %>%
   mutate(ccl_clust = beer_ccl@cluster) %>%
   group_by(ccl_clust) %>%
   summarise_all('mean')
@@ -103,9 +107,6 @@ beer_reviews_1_ordered =
 # explore contents of the cluster and search through them
 beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == top_cluster$ccl_clust)
 ```  
- 
-Problem Statement
-========================================================
 
 - Contains about 1.5 million opinions on a large variety of beers
 - Selection can be difficult having so many options
@@ -364,19 +365,25 @@ Make a recommendation based on a single or multiple preferences
 Preferences:
 - 5 Aspects: Taste, Appearance, Aroma, Overall, Palate
 - Beer Style (104) or General Beer Style (24)
-- Alcohol Content Levels (Low, Below Normal, Normal, Above Normal, High)
+- Alcohol Content Level (Low, Below Normal, Normal, Above Normal, High)
   - OR numeric (Ex. ABV >= 5 %)
 
-```{r Recommendation, echo=FALSE, message=FALSE, warning=FALSE}
+
+Beer Recommendations: Example 1
+========================================================
+
+```{r Recommendation, message=FALSE, warning=FALSE, include=FALSE}
 # ---- RECOMMENDATION ----
 # list of criteria:
 # taste, overall, aroma, palate, appearance, overall grade, beer ABV, beer style
 
+# ---- Criteria ----
 # search for specific criteria
 beer_rec_df = 
   beer_reviews_1_ordered %>%
-  filter(ovr_grade >= 4.0, taste >= 4.5, general_beer_style == 'lager', beer_abv >= 5)
+  filter(palate >= 4.0, aroma >= 4.0, general_beer_style == 'ipa', beer_abv >= 6)
 
+# ---- Analyze ----
 # analyse the criteria further before recommendation 
 beer_reviews_1_sub = 
   beer_rec_df %>% 
@@ -397,7 +404,7 @@ beer_reviews_1_sub =
     appearance_sd    = sd(appearance), 
     palate_sd        = sd(palate),
     sd_consistency   = (overall_sd + taste_sd + aroma_sd + appearance_sd + palate_sd)/5) %>%
-  filter(review_count > 10) %>%
+  filter(review_count >= 10) %>%
   arrange(desc(overall_mean), desc(taste_mean), desc(aroma_mean), desc(appearance_mean), desc(palate_mean))
 
 # select random beer from list
@@ -416,10 +423,39 @@ rec_func = function(df){
 rec_func(beer_reviews_1_sub)
 ```
 
-Beer Recommendations: Example
+
+Search for:
+- lager 
+- Great taste and aroma
+- ABV >= 5%
+
+Output:
+
+| Beer Name | Overall | Taste | Aroma |
+|-------|-------|-------|-------|
+|great lakes oktoberfest | 4.39  | 4.34 |  4.09|
+|brooklyn oktoberfest beer | 4.19  | 4.13 |  4.07|
+|bell's octoberfest beer  | 4.21 | 4.06 |  4.06|
+|great lakes eliot ness | 4.37  | 4.27 |  4.12|
+|old scratch amber lager | 4.06  | 4.10 |  4.02|
+
+Beer Recommendations: Example 2
 ========================================================
 
+Search for:
+- IPA 
+- Great aroma and palate
+- ABV >= 6%
 
+Output:
+
+| Beer Name | Overall | Palate | Aroma |
+|-------|-------|-------|-------|
+|maharaja| 4.15  | 4.25 |  4.33|
+|two hearted ale  | 4.44  | 4.27 |  4.40|
+|wild devil  | 4.04 | 4.13 |  4.17|
+|sierra nevada celebration ale | 4.34  | 4.24 |  4.25|
+|samuel adams latitude 48 ipa | 4.14  | 4.11 |  4.05|
 
 
 
