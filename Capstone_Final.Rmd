@@ -1144,6 +1144,12 @@ beer_reviews_1 %>%
 ```
 
 ```{r Subset cluster, message=FALSE, warning=FALSE, include=FALSE}
+# find the highest rated cluster
+top_cluster = 
+  cluster_smry %>%
+  filter(ovr_grade > 4.15)
+top_cluster$ccl_clust # use this cluster for making rec's
+
 # change the order of columns
 glimpse(beer_reviews_1)
 beer_reviews_1_ordered = 
@@ -1152,7 +1158,7 @@ beer_reviews_1_ordered =
          general_beer_style, beer_name_cnt, brewery_name_cnt)
 
 # explore contents of the cluster and search through them
-beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == 4)
+beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == top_cluster$ccl_clust)
 ```
 
 We'll choose cluster four because it has the highest mean ratings for the five aspects. Also, it also has the highest mean rating for alcohol content and most reviews per beer. 
@@ -1214,6 +1220,8 @@ rec_func(beer_reviews_1_sub)
 ### Further Research
 
 This recommendation system is far from perfect and can greatly benefit from further research. Current accuracy levels are relatively low and could use improvement. Other machine learning techniques such as decision trees or k-nearest neighbors can be applied with the same goal of classification. Optionally, multiple methods can be combined together to further improve accuracy in classifying this data set. 
+
+
 
 Logistic regression can also be applied in predicting whether someone will *like* or *dislike* (a binary outcome) a recommended beer. However, a *like* and *dislike* would have to be defined clearly. For example, we can try to predict whether the customer will rate the recommended beer higher or lower than the mean.
 

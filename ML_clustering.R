@@ -128,7 +128,6 @@ for (i in 1:15){
   k[i] = kmeans(beer_reviews_df2, centers = i, iter.max = 50, nstart = 25)$cluster
 }
 names(k) = c('k1','k2','k3','k4','k5','k6','k7','k8','k9','k10','k11','k12','k13','k14','k15')
-glimpse(k)
 r1 = randIndex(table(beer_reviews_10k$taste, k$k1))
 r2 = randIndex(table(beer_reviews_10k$taste, k$k2))
 r3 = randIndex(table(beer_reviews_10k$taste, k$k3))
@@ -200,14 +199,20 @@ randIndex(table(beer_reviews_1$ovr_grade, beer_ccl@cluster))# hardcl + manhattan
 # ---- Summarize the Clusters ----
 # summarize resulting clusters
 beer_ccl@clusinfo
-ccl_clust = beer_ccl@cluster
-beer_reviews_1 %>%
+cluster_smry = 
+  beer_reviews_1 %>%
   mutate(ccl_clust = beer_ccl@cluster) %>%
   group_by(ccl_clust) %>%
   summarise_all('mean')
 # Cluster 4 appears to have the highest ratings for taste, aroma, appearance, overall, palate, and overall grade
 # it also has the highest amount of reviews 
 # ***NOTE: running clustering again MAY not return the same cluster number as having the highest ratings. It's not always #4
+
+top_cluster = 
+  cluster_smry %>%
+  filter(ovr_grade > 4.15)
+top_cluster$ccl_clust # use this cluster for making rec's
+
 glimpse(beer_reviews_1)
 beer_reviews_1_ordered = 
   beer_reviews_1 %>%
@@ -217,19 +222,17 @@ beer_reviews_1_ordered =
 # explore contents of the clusters and search through them
 glimpse(beer_reviews_1)
 ccl_clust = beer_ccl@cluster
-beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == 4)
+beer_reviews_1_sub = subset(beer_reviews_1_ordered, ccl_clust == top_cluster$ccl_clust)
 
 
 # ---- RECOMMENDATION ----
 # list of criteria:
 # taste, overall, aroma, palate, appearance, overall grade, beer ABV, beer style
 
-
 # search for specific criteria
 beer_rec_df = 
   beer_reviews_1_ordered %>%
   filter(ovr_grade >= 4.0, beer_abv_factor == 'below normal')
-
 
 # analyse the criteria further before recommendation 
 beer_reviews_1_sub = 
@@ -252,9 +255,7 @@ beer_reviews_1_sub =
     palate_sd        = sd(palate),
     sd_consistency   = (overall_sd + taste_sd + aroma_sd + appearance_sd + palate_sd)/5) %>%
   filter(review_count > 10) %>%
-  arrange(desc(mean_consistency), desc(sd_consistency))
-
-stats_function_2(beer_reviews_1_sub$rev_cnt_ovr, 'sub clus stats')
+  arrange(desc(overall_mean), desc(taste_mean), desc(aroma_mean), desc(appearance_mean), desc(palate_mean))
 
 # select random beer from list
 # using sample_n(), generate 5 recommendations
