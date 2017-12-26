@@ -1,0 +1,789 @@
+Capstone - Final
+================
+Sergey Mouzykin
+December 23, 2017
+
+### Introduction
+
+The great beer shortage has driven people to madness. No. That is obviously not true. On the contrary, the abundance of beer variety has left us with little imagination as to what the next micro brew will be found on the shelves of your local beer distributor. Perhaps there is hope in narrowing down your next selection before the next meal by using some type of recommendation system based on previous reviews. The decision for your next beer experience doesn't have to be a tedious one. Technology exists to make our lives easier and this surely applies in aiding decision making in regards to the next purchase of a perfect brew.
+
+Sifting through a diverse selection of beers can be quite overwhelming. However, there is a methodical approach that we can take in order to solve this problem. Instinctively, we can come to realize that there is some type of pattern in our decision making, whether it is selecting your next meal or a beer to go along with it. Through experience of taking in massive amounts of data, our minds have learned how to recognize everyday objects and separate (cluster) them into similar groups. This same technique can be applied specifically for aiding us in selecting a beer that will match anyone's personal preference. In particular, we can use an unsupervised learning technique to classify similarities and cluster them into groups.
+
+### Client
+
+The client can be an application developer or a website/blog comprised of beer enthusiasts who are looking for a way to recommend beer based on previous reviews in order to invite people to discover new brews from around the world without bias. A well built recommendation system can be a powerful tool which can drive traffic to the client's website or application.
+
+Another possible client can a brewery or distributor. A brewery will most certainly want to know which beers are in high demand so they could optimize their production to focus on demand in order to maximize their profit and increase efficiency of production. The distributor also needs to know which beers are in high demand in order to maintain optimal inventory and sales by communicating their needs to the brewer.
+
+### Beer Reviews Data Set
+
+The data set is a collection of about 1.5 million beer reviews from a period of about 10 years up to 2011. Reviewers were tasked with rating a beer's five aspects such as appearance, aroma, palate, taste and overall impression based on a (1-5) scale. This data set was acquired from data.world [link](https://data.world/socialmediadata/beeradvocate).
+
+### Data Set Preview
+
+| Variable           | Description                           |
+|--------------------|---------------------------------------|
+| review time        | Number of times the beer was reviewed |
+| review overall     | Overall rating of the beer            |
+| review aroma       | Aroma rating                          |
+| review appearance  | Appearance rating                     |
+| review profilename | Reviewer's profile name               |
+| review palate      | Palate rating                         |
+| review taste       | Taste rating                          |
+| brewery name       | Name of the brewery                   |
+| brewery ID         | Brewery's identification number       |
+| beer style         | Style of the beer                     |
+| beer name          | Name of the beer                      |
+| beer ABV           | Alcohol content of beer               |
+| beer ID            | Identification number of beer         |
+
+### Approach
+
+To begin with, the goal is to focus on a select number of questions to answer in order to create an appropriate recommendation system. These questions will be based on the perspective of the customers and will encompass personal preferences.
+
+1.  Find the overall rating for each beer style and the most popular beer style.
+
+<!-- -->
+
+1.  Which breweries produce the highest rated beers?
+
+<!-- -->
+
+1.  How does each aspect, including alcohol content and beer style, affect the overall rating?
+
+<!-- -->
+
+1.  Create groups for alcohol level (low, medium, high)
+
+<!-- -->
+
+1.  Recommend five beers based on preferred aspects and style (Ex.: Hefeweizen, taste, aroma, ABV).
+
+In order answer these questions, the following techniques will be applied, summary statistics, bar charts, and histograms. Machine learning application will be necessary for providing a recommendation. In general, a variety of clustering methods will be applied to find similarities between various beers and their characteristics.
+
+Things to consider: - Outliers. Some beers may have a low amount of reviews which may skew results adversely and therefore should be discounted. The cutoff needs to be determined. - Missing values. Why are they missing? Can they teach us anything? Will they have a great impact on the overall ratings?
+
+\`\`\`{r Libraries and Data Frame, message=FALSE, warning=FALSE, include=FALSE} library(ggplot2) library(readr) library(tidyr) library(dplyr) library(RColorBrewer) library(ggthemes) library(NbClust) library(cluster) library(flexclust) library(factoextra) beer\_reviews = read\_csv("beer\_reviews\_original.csv") beer\_reviews = as\_data\_frame(beer\_reviews) \# glimpse(beer\_reviews) reds = brewer.pal(9, 'Reds') blues = brewer.pal(9, 'Blues') theme\_blue = theme(panel.background = element\_blank(), legend.key = element\_rect(fill = 'gray', color = "\#3182BD", size = 1), legend.background = element\_rect(fill = 'gray', color = "\#3182BD", size = 1), legend.position = 'right', legend.direction = 'vertical', strip.background = element\_blank(), plot.background = element\_rect(fill = 'gray', color = "\#3182BD", size = 2), panel.grid = element\_line(linetype = 8), axis.line = element\_line(color = "\#08519C"), axis.ticks = element\_line(color = "\#08519C"), axis.ticks.x = element\_line(color = "black", size = 1), axis.ticks.y = element\_line(color = "black", size = 1), strip.text = element\_text(size = 16, color = 'red'), axis.title.y = element\_text(color = 'black', hjust = 0.5, face = "italic"), axis.title.x = element\_text(color = 'black', hjust = 0.5, face = "italic"), plot.title = element\_text(color = 'black', hjust = '0.5'), axis.text = element\_text(color = "black"))
+
+stats\_function\_2 = function(DF, col\_name, summary = FALSE){ \# DF has to be a list if (summary == TRUE){ summary(DF) } else if(summary == FALSE){ DF = list(DF)
+sd\_list = lapply(DF, sd) var\_list = lapply(DF, var) mean\_list = lapply(DF, mean) median\_list = lapply(DF, median) max\_list = lapply(DF, max) min\_list = lapply(DF, min) yy = c(sd\_list, var\_list, mean\_list, median\_list, max\_list, min\_list) rows = c('standard deviation', 'variance', 'mean', 'median', 'max', 'min') columns = c(col1 = col\_name) sd\_matrix = matrix(yy, byrow = TRUE, nrow = length(rows), ncol = length(columns)) colnames(sd\_matrix) = columns rownames(sd\_matrix) = rows sd\_matrix }
+
+}
+
+\`\`\`
+
+### Data Wrangling Overview
+
+This raw data will be cleaned and wrangled into a form which then can be analyzed. The following will be performed:
+
+-   Column names will be renamed to be short, simple and descriptive
+-   All columns with characters will be changed to lower case. This includes brewery name, beer name, beer style, and profile name
+-   Any missing values found will be replaced accordingly
+-   The amount of beer styles will be reduced from 104 to a more manageable size
+
+Lower Case - Change all columns with characters to lower case. This includes four columns, brewery name, beer name, profile name, and beer style.
+
+\`\`\`{r Lower Case, message=FALSE, warning=FALSE, include=FALSE} \# ---- Lower Case ---- brewery\_name = tolower(beer\_reviews*b**r**e**w**e**r**y*<sub>*n*</sub>*a**m**e*)*b**e**e**r*<sub>*n*</sub>*a**m**e* = *t**o**l**o**w**e**r*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*beer\_name) profile\_name = tolower(beer\_reviews*r**e**v**i**e**w*<sub>*p*</sub>*r**o**f**i**l**e**n**a**m**e*)*b**e**e**r*<sub>*s*</sub>*t**y**l**e* = *t**o**l**o**w**e**r*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*beer\_style)
+
+\`\`\`
+
+Rename Columns
+
+-   Some columns need to be renamed in order to be more concise. The changes are summarized in the table below.
+
+| Old Name            | New Name      |
+|---------------------|---------------|
+| review\_overall     | overall       |
+| review\_aroma       | aroma         |
+| review\_appearance  | appearance    |
+| review\_palate      | palate        |
+| review\_taste       | taste         |
+| review\_profilename | profile\_name |
+| brewery\_name       | *no change*   |
+| brewery\_id         | *no change*   |
+| beer\_style         | *no change*   |
+| beer\_name          | *no change*   |
+| beer\_abv           | *no change*   |
+| beer\_id            | *no change*   |
+| review\_time        | *no change*   |
+
+\`\`\`{r Lower Case and Rename, message=FALSE, warning=FALSE, include=FALSE} \# ---- Rename Columns ---- taste = beer\_reviews*r**e**v**i**e**w*<sub>*t*</sub>*a**s**t**e**p**a**l**a**t**e* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*review\_palate appearance = beer\_reviews*r**e**v**i**e**w*<sub>*a*</sub>*p**p**e**a**r**a**n**c**e**a**r**o**m**a* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*review\_aroma overall = beer\_reviews*r**e**v**i**e**w*<sub>*o*</sub>*v**e**r**a**l**l**b**r**e**w**e**r**y*<sub>*i*</sub>*d* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*brewery\_id beer\_id = beer\_reviews*b**e**e**r*<sub>*b*</sub>*e**e**r**i**d**r**e**v**i**e**w*<sub>*t*</sub>*i**m**e* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*review\_time beer\_abv = beer\_reviews$beer\_abv
+
+put together the data frame
+===========================
+
+beer\_reviews = data\_frame(brewery\_name, beer\_name, profile\_name, beer\_style, taste, palate, appearance, aroma, overall, brewery\_id, beer\_id, review\_time, beer\_abv)
+
+\`\`\`
+
+### Missing Values
+
+Approach:
+
+1.  Create a function for finding missing values
+2.  Iterate this function over every column
+3.  Create a matrix of missing values for easier visualization
+
+\`\`\`{r Missing Values, echo=FALSE, message=FALSE, warning=FALSE} find\_NA = function(column\_name){ beer\_reviews %&gt;% filter(is.na(column\_name)) %&gt;% summarise(missing\_values = n()) }
+
+columns\_name = list( beer\_reviews*b**e**e**r*<sub>*i*</sub>*d*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*brewery\_name, beer\_reviews*b**r**e**w**e**r**y*<sub>*i*</sub>*d*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*beer\_abv, beer\_reviews*p**r**o**f**i**l**e*<sub>*n*</sub>*a**m**e*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*taste, beer\_reviews*p**a**l**a**t**e*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*beer\_style, beer\_reviews*a**p**p**e**a**r**a**n**c**e*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*aroma, beer\_reviews*o**v**e**r**a**l**l*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*review\_time, beer\_reviews$beer\_name ) missing\_vals = sapply(columns\_name, find\_NA) \# matrix of missing values columns = c('beer id', 'brewery name', 'brewery id', 'beer ABV', 'profile name', 'taste', 'palate', 'beer style', 'appearance', 'aroma', 'overall', 'review time', 'beer name') rows = c('missing values') missing\_matrix = matrix(missing\_vals, byrow = TRUE, nrow = 1) colnames(missing\_matrix) = columns rownames(missing\_matrix) = rows missing\_matrix \`\`\`
+
+Missing values are found in the following columns:
+
+| Column       | Amount of missing values |
+|--------------|--------------------------|
+| brewery name | 15                       |
+| beer ABV     | 67,785                   |
+| profile name | 348                      |
+
+The alcohol content is not always written on the container and relatively low ABV is not required to be printed on containers. This may explain the large amount of missing values in the *beer\_abv* column.
+
+### Missing Values: beer ABV (alcohol by volume)
+
+To deal with these missing values, the mean of the *beer\_abv* will be computed and used to replace the missing values. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result.
+
+\`\`\`{r ABV and mean, echo=TRUE, message=FALSE, warning=FALSE}
+
+mean\_abv = mean(beer\_reviews$beer\_abv, na.rm = TRUE) \# = 7.04 median\_abv = median(beer\_reviews$beer\_abv, na.rm = TRUE) \# 6.6
+
+replace the missing values in ABV with the mean
+===============================================
+
+beer\_reviews = beer\_reviews %&gt;% replace\_na(list(beer\_abv = mean\_abv)) \# check for missing values again find\_NA(beer\_reviews$beer\_abv) \`\`\`
+
+### Missing Values: Brewery Name
+
+At the moment, we can't make any accurate guesses as to what the names are of the breweries. Therefore, their missing values will be replaced with the string '*unknown*'. After replacing the missing values, the column will be checked again for any missing values in order to confirm the result.
+
+`{r Brewery Name, echo=TRUE, message=FALSE, warning=FALSE} # view the matrix with missing values missing_matrix # replace the missing names with 'unknown' beer_reviews =    beer_reviews %>%   replace_na(list(brewery_name = 'unknown')) # check for missing values again find_NA(beer_reviews$brewery_name)`
+
+### Missing Values: Profile Name
+
+Profile names will be replaced with the string '*unknown*' since we can't make any accurate guesses of somebody's name in this instance.
+
+\`\`\`{r Profile Name, echo=TRUE, message=FALSE, warning=FALSE} \# view the matrix with missing values missing\_matrix
+
+glance over the missing values
+==============================
+
+beer\_reviews %&gt;% select(profile\_name) %&gt;% filter(is.na(profile\_name))
+
+replace the missing profile names with 'Unknown'
+================================================
+
+beer\_reviews = beer\_reviews %&gt;% replace\_na(list(profile\_name = 'unknown'))
+
+check for missing values again
+==============================
+
+find\_NA(beer\_reviews$profile\_name)
+
+\`\`\`
+
+### Beer Styles
+
+Currently, there are 104 unique beer styles included in this data set. However, some of these styles are highly specific due to their brewing process, ingredient ratios, yeast type, or a combination of other factors; but they can be grouped together since they are a variation of an ale or a lager. The goal is to classify them into more general terms, but without over simplifying, in order to produce plots that are easy to read and translate. A new column will be created to represent these styles. The approach will involve doing some research on the current beer styles included and deciding how to categorize them to yield a reduced list. The *gsub* function will be used to iterate over beer styles and categorize them accordingly.
+
+New Beer-Style column will consist of the following styles:
+
+| Beer Style |        |        |            |          |
+|------------|--------|--------|------------|----------|
+| ale        | lager  | stout  | lambic     | spiced   |
+| pilsner    | porter | smoked | barleywine | ipa      |
+| wheat      | bock   | bitter | rye        | trappist |
+
+\`\`\`{r Beer Styles, message=FALSE, warning=FALSE, include=FALSE} \# create a list of beer styles to use within 'gsub' style\_list = c(beer\_reviews %&gt;% select(beer\_style))
+
+style\_list = unlist(style\_list) ale = gsub(pattern = '.*ale.*|<sup>alt.*|.*winter.*|.*garde$|</sup>k.*lsch.*', replacement = 'ale', x = style\_list) lager = gsub(pattern = '.*lager.*|^schwarz.*|^m.*rzen.*|.*steam.*|.*zwickel.*', replacement = 'lager', x = ale) stout = gsub(pattern = '.*stout.*', replacement = 'stout', x = lager) pils = gsub(pattern = '.*pils.*', replacement = 'pilsner', x = stout) porter = gsub(pattern = '.*porter.*', replacement = 'porter', x = pils) wheat = gsub(pattern = '.*weizen.*|.*wit.*|.*weiss.*|.*gose.*', replacement = 'wheat', x = porter) bock = gsub(pattern = '.*bock.*', replacement = 'bock', x = wheat) lambic = gsub(pattern = '<sup>lambic.*|.*faro.*|.*gueuze.*',\\ replacement\\ =\\ 'lambic',\\ x\\ =\\ bock)\\ smoked\\ =\\ gsub(pattern\\ =\\ '^smoked.*|</sup>rauch.*', replacement = 'smoked', x = lambic) barleywine = gsub(pattern = '.*barleywine.*', replacement = 'barleywine', x = smoked) bitter = gsub(pattern = '.*bitter.*', replacement = 'bitter', x = barleywine) rye = gsub(pattern = '.*rye.*|.*roggen.*|kvass', replacement = 'rye', x = bitter) spiced = gsub(pattern = '.*herbed.*|.*braggot.*|^chile.*', replacement = 'spiced/herbed', x = rye) trappist = gsub(pattern = '<sup>quad.*|^dub.*|</sup>tri.*', replacement = 'trappist', x = spiced) ipa = gsub(pattern = '.*ipa.*', replacement = 'ipa', x = trappist)
+
+style\_list\_mod = ipa unique(style\_list\_mod) \# print out the list of distinct beer styles length(unique(style\_list\_mod)) \# number of distinct beer styles: 24 \`\`\`
+
+A new column for beer styles is created using the mutate() function.
+
+\`\`\`{r Mutate and Summarize, echo=TRUE, message=FALSE, warning=FALSE} \# create new column with the new styles using mutate() beer\_reviews = beer\_reviews %&gt;% mutate(general\_beer\_style = style\_list\_mod)
+
+glimpse(beer\_reviews)
+
+summarize the new beer styles by calling distinct()
+===================================================
+
+beer\_reviews %&gt;% group\_by(general\_beer\_style) %&gt;% summarise(style\_count = n()) %&gt;% arrange(desc(style\_count))
+
+\`\`\`
+
+### Plot: Beer ABV
+
+Plotting the beer's ABV as a histogram will reveal it's distribution and help us spot any outliers that may be present before diving into deeper analysis.
+
+\`\`\`{r Plot: Beer ABV, echo=FALSE, message=FALSE, warning=FALSE} \#glimpse(beer\_reviews) blues = brewer.pal(6, 'Blues') ggplot(beer\_reviews, aes(x = beer\_abv)) + geom\_histogram(binwidth = 0.5, position = 'identity', fill = '\#3182BD', col = 'black') + scale\_x\_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 5)) + scale\_y\_continuous('Beer Count') + ggtitle('Beer ABV Distribution') + theme\_blue
+
+\`\`\`
+
+This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean as the outliers have a greater effect on the mean than the median. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
+
+| Stat               | Value |
+|--------------------|-------|
+| Standard Deviation | 2.27  |
+| Variance           | 5.16  |
+| Mean               | 7.04  |
+| Median             | 6.6   |
+| Max                | 57.7  |
+| Min                | 0.01  |
+
+`{r Max and Min for beer ABV, echo=TRUE, message=FALSE, warning=FALSE} # find max and min for beer ABV # replace the missing values before finding MAX and MIN max(beer_reviews$beer_abv) # 57.7 %  min(beer_reviews$beer_abv) # 0.01 %`
+
+### Interval: Beer ABV
+
+In order to better visualize the alcohol level content, the ABV can be distributed into five factored levels using the calculated mean and standard deviation. These five levels will be labeled as, '*low*', '*below normal*', '*normal*', *'above normal*', and '*high*'. The computed standard deviation will be used to create the breaks for the labels.
+
+\`\`\`{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+abv\_vector = beer\_reviews$beer\_abv mean\_abv = mean(abv\_vector) \# 7.04 median\_abv = median(abv\_vector) \# 6.6 sd(abv\_vector) \# 2.27 var(abv\_vector) \# 5.16 length(abv\_vector)
+
+calculate the deviation breaks
+==============================
+
+one\_sd\_below = mean(abv\_vector) - sd(abv\_vector) \# 4.77 -&gt; 1 SD below mean one\_sd\_above = mean(abv\_vector) + sd(abv\_vector) \# 9.31 -&gt; 1 SD above mean two\_sd\_below = mean(abv\_vector) - 2*sd(abv\_vector) \# 2.50 -&gt; 2 SD below mean two\_sd\_above = mean(abv\_vector) + 2*sd(abv\_vector) \# 11.59 -&gt; 2 SD above mean
+
+Interval of ABV
+===============
+
+use cut() and a vector for the breaks
+=====================================
+
+normal ABV level will be considered being within 1 SD of the mean
+=================================================================
+
+breaks\_vect = c(0, two\_sd\_below, one\_sd\_below, one\_sd\_above, two\_sd\_above, 60) interval\_abv = cut(abv\_vector, breaks = breaks\_vect, labels = c('low', 'below normal', 'normal', 'above normal', 'high')) table(interval\_abv) \`\`\`
+
+Sum the amounts within two standard deviations and divide by total amount of rows. This will contain about 95% of all the data points in the beer's abv column. `{r Beer ABV: Normal, echo=FALSE, message=FALSE, warning=FALSE} (140735 + 1193157 + 200598) / length(abv_vector) * 100 # 0.9671`
+
+\`\`\`{r Mutate Beer ABV Interval, echo=TRUE, message=FALSE, warning=FALSE} \# NEW COLUMN: beer\_abv\_factor beer\_reviews = beer\_reviews %&gt;% mutate(beer\_abv\_factor = interval\_abv)
+
+glimpse(beer\_reviews) \`\`\`
+
+### Write the cleaned data to a new file
+
+The clean file is now ready to be written.
+
+\`\`\`{r Write Cleaned Data, echo=TRUE, message=FALSE, warning=FALSE} beer\_reviews\_clean = beer\_reviews glimpse(beer\_reviews\_clean)
+
+write the clean file
+====================
+
+write\_csv(beer\_reviews\_clean, 'beer\_reviews\_clean.csv') \`\`\`
+
+### Summary Statistics
+
+This will be a good and simple starting point for finding more complex answers later on. Summary statistics will give us a glimpse into the characteristics of this data set and will guide us toward the next steps.
+
+\`\`\`{r clean df, message=FALSE, warning=FALSE, include=FALSE} beer\_reviews = beer\_reviews\_clean
+
+\`\`\`
+
+### Beer Name
+
+Here we will summarize the standard deviation, variance, mean, median, max, and min for every beer name. Also, it will be useful to summarize each rated characteristic such as the *overall*, *taste*, *appearace*, *aroma*, and *palate.*
+
+\`\`\`{r Aspects summary, echo=FALSE, message=FALSE, warning=FALSE}
+
+for every beer style and beer name summarize, SD, VAR, MEAN, MEDIAN, MAX, MIN
+=============================================================================
+
+stats\_function\_2(beer\_reviews*o**v**e**r**a**l**l*, ′*O**v**e**r**a**l**l**R**a**t**i**n**g**S**u**m**m**a**r**y*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*taste, 'Taste Rating Summary') stats\_function\_2(beer\_reviews*a**r**o**m**a*, ′*A**r**o**m**a**R**a**t**i**n**g**S**u**m**m**a**r**y*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*appearance, 'Appearance Rating Summary') stats\_function\_2(beer\_reviews$palate, 'Palate Rating Summary')
+
+\`\`\`
+
+The min and max for two columns, overall and appearance, are 0 and 5 respectively. It's worth taking a closer look at those ratings since the other aspects range from 1 to 5.
+
+Looking at the mean and standard deviation (SD) of overall stat summary column where the overall rating is given a zero, it is interesting to find that in some of the more extreme scenarios, the ratings between different aspects vary greatly. In particular, for the beer, *Latter Days Stout*, we can find that a rating of zero for the overall was given out while at the same time its aroma was rated a four. It seems contradictory to rate the overall as a zero while enjoying at least one aspect of the beer, in particular, its aroma.
+
+\`\`\`{r Beer name stats, echo=FALSE, message=FALSE, warning=FALSE}
+
+the min and max for two columns, overall and appearance, are 0 and 5 respectively. It's worth taking a closer look at those ratings
+===================================================================================================================================
+
+look at the mean and SD of overall column where the overall rating is given a zero
+==================================================================================
+
+beer\_reviews\_dist = beer\_reviews %&gt;% group\_by(beer\_name, overall, taste, aroma, appearance, palate) %&gt;% summarise( beer\_name\_count = n(), overall\_sd = sd(overall)) %&gt;% arrange(overall) %&gt;% filter(overall == 0) %&gt;% print(n = 10)
+
+tally each beer name and calculate SD for the 5 observations
+============================================================
+
+beer\_reviews\_SD = beer\_reviews %&gt;% group\_by(beer\_name, general\_beer\_style) %&gt;% summarise(beer\_name\_count = n(),
+
+            overall_sd    = sd(overall), 
+            taste_sd      = sd(taste),
+            aroma_sd      = sd(aroma), 
+            appearance_sd = sd(appearance), 
+            palate_sd     = sd(palate)) %>%
+
+\#filter(beer\_name\_count &gt;= 5) %&gt;% arrange(overall\_sd) %&gt;% na.omit %&gt;% print(n = 20)
+
+stats\_function\_2(beer\_reviews\_SD$beer\_name\_count, 'Beer Review Count')
+
+\`\`\`
+
+### Plot: Standard Deviation Distribution
+
+These plots illustrate the distribution of the standard deviations.
+
+In support to the histogram, we can also calculate the mean, median, standard deviation, maximum rating, and minimum rating. Essentially, the deviation can tell us how divisive people are among the ratings. Generally, it appears that people will agree on a rating value to within about 3/4 of a point. However, the deviation will vary depending on the beer.
+
+``` {r}
+# PLOT
+# overall_sd histogram
+ggplot(beer_reviews_SD, aes(x = overall_sd)) + 
+  geom_histogram(binwidth = 0.1, fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Overall Deviation', breaks = seq(0, 3.0, by = 0.2)) +
+  theme_blue
+stats_function_2(beer_reviews_SD$overall_sd, 'Overall SD Summary')
+
+ggplot(beer_reviews_SD, aes(x = taste_sd)) + 
+  geom_histogram(binwidth = 0.1, fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Taste Deviation', breaks = seq(0, 3.0, by = 0.2)) +
+  theme_blue
+stats_function_2(beer_reviews_SD$taste_sd, 'Taste SD Summary')
+
+ggplot(beer_reviews_SD, aes(x = aroma_sd)) + 
+  geom_histogram(binwidth = 0.1, fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Aroma Deviation', breaks = seq(0, 3.0, by = 0.2)) +
+  theme_blue
+stats_function_2(beer_reviews_SD$aroma_sd, 'Aroma SD Summary')
+
+ggplot(beer_reviews_SD, aes(x = appearance_sd)) + 
+  geom_histogram(binwidth = 0.1, fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Appearance Deviation', breaks = seq(0, 3.0, by = 0.2)) +
+  theme_blue
+stats_function_2(beer_reviews_SD$appearance_sd, 'Appearance SD Summary')
+  
+ggplot(beer_reviews_SD, aes(x = palate_sd)) + 
+  geom_histogram(binwidth = 0.1, fill = '#3182BD', col = 'black') + 
+  scale_x_continuous('Palate Deviation', breaks = seq(0, 3.0, by = 0.2)) +
+  theme_blue 
+stats_function_2(beer_reviews_SD$palate_sd, 'Palate SD Summary')
+```
+
+Additionally, a filter can be created to find beers with the smallest deviation. This will return a list of beers which reviewers are more likely to agree upon with their ratings.
+
+\`\`\`{r Filter: 5 Deviations, echo=TRUE, message=FALSE, warning=FALSE} \# NOTE: \# with only 1 or 2 reviews, disagreements vary greatly among the 5 observations \# 1. lower deviation implies agreement between different reviews \# 2. higher deviation implies disagreement between reviewers
+
+GRAPH NOTE:
+===========
+
+The outliers contained in the graph are due to low amount of reviews and the disagreements between reviewers
+============================================================================================================
+
+FIND the least amount of disagreements by filtering the SD for each observation. Smaller deviation = less disagreement
+======================================================================================================================
+
+filter(sd between(0, 0.25), name\_count &gt;=5)
+===============================================
+
+beer\_reviews\_sd\_filter = beer\_reviews %&gt;% group\_by(beer\_name, general\_beer\_style) %&gt;% summarise(beer\_name\_count = n(), overall\_sd = sd(overall), taste\_sd = sd(taste), aroma\_sd = sd(aroma), appearance\_sd = sd(appearance), palate\_sd = sd(palate)) %&gt;% filter(beer\_name\_count &gt;= 5, between(overall\_sd, 0, 0.30), between(taste\_sd, 0, 0.30), between(aroma\_sd, 0, 0.30), between(appearance\_sd, 0, 0.30), between(palate\_sd, 0, 0.30)) %&gt;% arrange(overall\_sd, taste\_sd, aroma\_sd, appearance\_sd, palate\_sd) %&gt;% print(n = 20)
+
+\`\`\`
+
+### General Beer Style
+
+\`\`\`{r General beer style, echo=FALSE, message=FALSE, warning=FALSE} \# tally each General\_beer style and find SD beer\_reviews\_style\_sd = beer\_reviews %&gt;% group\_by(general\_beer\_style) %&gt;% summarise(style\_count = n(),
+
+            overall_mean  = mean(overall),
+            overall_sd    = sd(overall), 
+            taste_sd      = sd(taste),
+            aroma_sd      = sd(aroma), 
+            appearance_sd = sd(appearance), 
+            palate_sd     = sd(palate)) %>%
+
+\#filter(beer\_name\_count &gt;= 5) %&gt;% arrange(overall\_mean) %&gt;% na.omit %&gt;% print(n = 25)
+
+overall\_mean shows the most disliked beer style: low alcohol
+=============================================================
+
+stats\_function\_2(beer\_reviews\_style\_sd*s**t**y**l**e*<sub>*c*</sub>*o**u**n**t*, ′*S**t**y**l**e**C**o**u**n**t*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>*s*</sub>*t**y**l**e*<sub>*s*</sub>*d*overall\_sd, 'Overall SD') stats\_function\_2(beer\_reviews\_style\_sd*o**v**e**r**a**l**l*<sub>*m*</sub>*e**a**n*, ′*O**v**e**r**a**l**l**M**e**a**n*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>*s*</sub>*t**y**l**e*<sub>*s*</sub>*d*aroma\_sd, 'Aroma SD') stats\_function\_2(beer\_reviews\_style\_sd*t**a**s**t**e*<sub>*s*</sub>*d*, ′*T**a**s**t**e**S**D*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>*s*</sub>*t**y**l**e*<sub>*s*</sub>*d*appearance\_sd, 'Appearance SD') stats\_function\_2(beer\_reviews\_style\_sd$palate\_sd, 'Palate SD')
+
+\`\`\`
+
+Looking at the general beer style, we can find the least disliked beer style by looking at the mean of the overall (shown above). However, the standard deviation (1.00) is quite high in this case which implies disagreement and the ratings can vary by one point. Therefore, we cannot absolutely conclude that the low alcohol beer is rated the worst. Although, we can say that it is one the least appreciated beer styles among a few others.
+
+### Beer Style
+
+We can find the beer styles which are relatively best rated (shown below).
+
+\`\`\`{r Beer style, echo=FALSE, message=FALSE, warning=FALSE}
+
+tally each beer\_style and find SD
+==================================
+
+beer\_reviews\_style\_sd2 = beer\_reviews %&gt;% group\_by(beer\_style) %&gt;% summarise(style\_count = n(),
+
+            overall_sd    = sd(overall), 
+            overall_mean  = mean(overall),
+            taste_sd      = sd(taste),
+            aroma_sd      = sd(aroma), 
+            appearance_sd = sd(appearance), 
+            palate_sd     = sd(palate)) %>%
+
+\#filter(beer\_name\_count &gt;= 5) %&gt;% arrange(desc(overall\_mean)) %&gt;% na.omit %&gt;% print(n = 50)
+
+missing values are created because there are too few amount of reviews and therefore the SD cannot be calculated
+================================================================================================================
+
+missing values need to be omitted as a result
+=============================================
+
+stats\_function\_2(beer\_reviews\_style\_sd2*o**v**e**r**a**l**l*<sub>*s*</sub>*d*, ′*O**v**e**r**a**l**l**S**t**a**t**s*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>*s*</sub>*t**y**l**e*<sub>*s*</sub>*d*2overall\_mean, 'Overall Mean Stats') stats\_function\_2(beer\_reviews\_style\_sd2*t**a**s**t**e*<sub>*s*</sub>*d*, ′*T**a**s**t**e**S**t**a**t**s*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>*s*</sub>*t**y**l**e*<sub>*s*</sub>*d*2aroma\_sd, 'Aroma Stats') stats\_function\_2(beer\_reviews\_style\_sd2*a**p**p**e**a**r**a**n**c**e*<sub>*s*</sub>*d*, ′*A**p**p**e**a**r**a**n**c**e**S**t**a**t**s*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>*s*</sub>*t**y**l**e*<sub>*s*</sub>*d*2palate\_sd, 'Palate Stats')
+
+\`\`\`
+
+### Plot: Beer ABV (alcohol by volume)
+
+This plot shows us that the ABV is actually a right-skewed distribution due to some beers having a a very high alcohol by volume content. The minimum and maximum of ABV content are 0.01% and 57.7%, respectively. The mean lies at 7.04, the median at 6.6, and the standard deviation is 2.27. We can also infer that the distribution is right-skewed due to the median being lower than the mean since the mean can easily be affected by outliers. Although the values range from 0.01 to 57.7, in theory, about 95% of these values should lie within two standard deviations from the mean.
+
+\`\`\`{r ABV Plot, message=FALSE, warning=FALSE} \# reduce the amount of data points with the sample\_n() \# this will produce the plots much faster than plotting all 1.5 million reviews beer\_reviews\_10k = sample\_n(beer\_reviews, size = 10000)
+
+PLOT: Beer ABV distribution
+===========================
+
+ggplot(beer\_reviews\_10k, aes(x = beer\_abv)) + geom\_histogram(binwidth = 0.5, position = 'dodge', fill = '\#3182BD', col = 'black') + scale\_x\_continuous('Alcohol by Volume (%)', breaks = seq(0, 60, by = 2)) + scale\_y\_continuous('Beer Count') + ggtitle('Beer ABV Distribution') + theme\_blue
+
+stats\_function\_2(beer\_reviews$beer\_abv, 'Beer ABV Summary')
+
+HISTOGRAM
+=========
+
+ggplot(beer\_reviews\_10k, aes(x = as.factor(overall), fill = general\_beer\_style)) + geom\_histogram(binwidth = 15, stat = 'count') + \#scale\_x\_continuous(limits = c(1,20)) + theme\_blue
+
+ABV factor and beer style
+=========================
+
+ggplot(beer\_reviews\_10k, aes(x = beer\_abv\_factor, fill = general\_beer\_style)) + geom\_histogram(stat = 'count', position = 'dodge') + scale\_x\_discrete('Beer ABV') + theme\_blue
+
+\`\`\`
+
+\`\`\`{r Plots, echo=FALSE, message=FALSE, warning=FALSE}
+
+--- Point Plot
+==============
+
+overall vs. beer ABV, colored by beer style
+===========================================
+
+ggplot(beer\_reviews\_10k, aes(x = overall, y = beer\_abv, col = general\_beer\_style)) + geom\_point(alpha = 0.3) + geom\_jitter() + theme\_blue
+
+Overall vs. Style, colored by beer style
+========================================
+
+ggplot(beer\_reviews\_10k, aes(x = overall, y = general\_beer\_style, col = beer\_abv\_factor)) + geom\_point(alpha = 0.1, shape = 21) + geom\_jitter() + theme\_blue
+
+ggplot(beer\_reviews\_10k, aes(x = beer\_abv, y = general\_beer\_style, col = as.factor(overall))) + geom\_point(alpha = 0.1, shape = 21) + geom\_jitter() + theme\_blue
+
+--- Histograms
+==============
+
+Overall and Beer ABV distribution
+=================================
+
+ggplot(beer\_reviews\_10k, aes(x = overall, fill = beer\_abv\_factor)) + geom\_histogram(binwidth = 0.25) + theme\_blue \# Overall and Beer Styles ggplot(beer\_reviews\_10k, aes(x = overall, fill = general\_beer\_style)) + geom\_histogram(binwidth = 0.25) + theme\_blue
+
+\`\`\`
+
+The graphs above helps visualize the overall rating distribution among the beer styles and their respective alcohol content.
+
+\`\`\`{r Five Aspects, echo=FALSE, message=FALSE, warning=FALSE} \# palate vs overall ggplot(beer\_reviews\_10k, aes(x = palate, y = overall)) + geom\_point(alpha = 0.6) + stat\_smooth(method = 'loess', se = TRUE) + geom\_jitter() + theme\_blue cor.test(beer\_reviews*p**a**l**a**t**e*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*overall)
+
+taste vs overall
+================
+
+ggplot(beer\_reviews\_10k, aes(x = taste, y = overall)) + geom\_point(alpha = 0.6) + stat\_smooth(method = 'loess', se = TRUE) + geom\_jitter() + theme\_blue cor.test(beer\_reviews*t**a**s**t**e*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*overall)
+
+aroma vs overall
+================
+
+ggplot(beer\_reviews\_10k, aes(x = aroma, y = overall)) + geom\_point(alpha = 0.6) + stat\_smooth(method = 'loess', se = TRUE) + geom\_jitter() + theme\_blue cor.test(beer\_reviews*a**r**o**m**a*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*overall)
+
+appearance vs overall
+=====================
+
+ggplot(beer\_reviews\_10k, aes(x = appearance, y = overall)) + geom\_point(alpha = 0.6) + stat\_smooth(method = 'loess', se = TRUE) + geom\_jitter() + theme\_blue cor.test(beer\_reviews*a**p**p**e**a**r**a**n**c**e*, *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*overall)
+
+\`\`\`
+
+Plotting overall against other aspects, we can observe a linear correlation emerging. Testing for correlation, we can observe that the strongest positive linear correlation occurs between Taste and Overall ratings with a value of 0.7915. Similarly, a strong positive linear correlation occurs between Palate and Overall with a value of 0.7029.
+
+### Plot: Distribution of Ratings
+
+These plots below help visualize the rating distribution of the five aspects, overall, taste, aroma, appearance, and palate.
+
+\`\`\`{r Histograms, echo=FALSE, message=FALSE, warning=FALSE}
+
+------ Histogram Plot -------
+=============================
+
+Overall Rating Distribution
+===========================
+
+ggplot(beer\_reviews, aes(x = overall)) + geom\_histogram(binwidth = 0.25, position = 'dodge', fill = '\#3182BD', col = 'black') + theme\_blue
+
+ggplot(beer\_reviews, aes(x = taste)) + geom\_histogram(binwidth = 0.25, position = 'dodge', fill = '\#3182BD', col = 'black') + theme\_blue
+
+ggplot(beer\_reviews, aes(x = aroma)) + geom\_histogram(binwidth = 0.25, position = 'dodge', fill = '\#3182BD', col = 'black') + theme\_blue
+
+ggplot(beer\_reviews, aes(x = appearance)) + geom\_histogram(binwidth = 0.25, position = 'dodge', fill = '\#3182BD', col = 'black') + theme\_blue
+
+ggplot(beer\_reviews, aes(x = palate)) + geom\_histogram(binwidth = 0.25, position = 'dodge', fill = '\#3182BD', col = 'black') + theme\_blue
+
+\`\`\`
+
+### Brewery Names: Rate the breweries
+
+Let's rate the breweries based on the amount of times a beer from that brewery was reviewed. In total, there are 5,740 distinct breweries included in this data set.
+
+\`\`\`{r Brewery Names, echo=TRUE, message=FALSE, warning=FALSE}
+
+distinct amount of breweries
+============================
+
+beer\_reviews %&gt;% select(brewery\_name) %&gt;% n\_distinct()
+
+Rating the Breweries
+====================
+
+brewery\_rating = beer\_reviews %&gt;% group\_by(brewery\_name) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall), overall\_sd = sd(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 2) %&gt;% print(n = 20)
+
+stats\_function\_2(brewery\_rating*o**v**e**r**a**l**l*<sub>*m*</sub>*e**a**n*, ′*O**v**e**r**a**l**l**M**e**a**n**s**t**a**t**s*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*b**r**e**w**e**r**y*<sub>*r*</sub>*a**t**i**n**g*review\_count, 'brewery review stats') \# the median for reviewed amount is 20, so we can use filter() to narrow the search by looking at breweries with at least 20 ratings
+
+Looking at breweries with at least 20 ratings, we can rate them by calculating the mean of the overall ratings
+==============================================================================================================
+
+Before deciding on the best breweries, we should calculate the mean and SD for all overall ratings. Better breweries should be at least
+=======================================================================================================================================
+
+two SD's away from the mean
+===========================
+
+\`\`\`
+
+Having only one review is not enough information to make a decision, so filtering the count of reviews being greater than two is a better start. Now the median for reviewed amount is 20, so we can use filter() to narrow the search by looking at breweries with at least 20 ratings.
+
+\`\`\`{r Brewery Names: filter, echo=TRUE, message=FALSE, warning=FALSE} \# change review count to 20 brewery\_rating = beer\_reviews %&gt;% group\_by(brewery\_name) %&gt;% summarise(review\_count = n(), overall\_mean = mean(overall), overall\_sd = sd(overall)) %&gt;% arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 20) %&gt;% print(n = 20) stats\_function\_2(brewery\_rating$review\_count, 'brewery review stats')
+
+\`\`\`
+
+Looking at breweries with at least 20 ratings, we can rate them by calculating the mean of the overall ratings. Before deciding on the best breweries, we should calculate the mean and SD for all overall ratings. Better breweries should be at least two SD's above the mean which would put them in the top 5%.
+
+\`\`\`{r Brewery Name: Stats Filter, echo=FALSE, message=FALSE, warning=FALSE} brewery\_ovr\_stats = stats\_function\_2(brewery\_rating$overall\_mean, 'brewery rating stats') one\_sd = brewery\_ovr\_stats\[1\] \# extract one standard deviation brewery\_mean = brewery\_ovr\_stats\[3\] \# extract one mean rating
+
+as.double(brewery\_mean) + as.double(one\_sd) \# one SD, 3.995 as.double(brewery\_mean) + 2 \* as.double(one\_sd)
+\# two standard deviations above the mean is 4.376. Let's filter again to find brewweries at or above 4.38
+
+brewery\_rating\_filter = beer\_reviews %&gt;% group\_by(brewery\_name) %&gt;% summarise(review\_count = n(),
+
+            overall_mean    = mean(overall), 
+            taste_mean      = mean(taste),
+            aroma_mean      = mean(aroma), 
+            appearance_mean = mean(appearance), 
+            palate_mean     = mean(palate),
+            
+            overall_sd      = sd(overall), 
+            taste_sd        = sd(taste),
+            aroma_sd        = sd(aroma), 
+            appearance_sd   = sd(appearance), 
+            palate_sd       = sd(palate)) %>%
+
+arrange(desc(overall\_mean)) %&gt;% filter(review\_count &gt;= 20, overall\_mean &gt;= 4.38) %&gt;% print(n = 20) \# now the amount of breweries are reduced to 5. All with an overall mean of at least 4.38
+
+\`\`\`
+
+Now, out of 5,740 breweries contained in this data set we have found five which meet or exceed this specific criteria.
+
+### Profile Names
+
+Here we can find the summary statistics for the profile names columns. In total, there are 33,388 people who submitted reviews. \`\`\`{r Profile Names, echo=TRUE, message=FALSE, warning=FALSE} \# number of profile names beer\_reviews %&gt;% select(profile\_name) %&gt;% distinct()
+
+amount of reviews by each person
+================================
+
+beer\_reviews %&gt;% group\_by(profile\_name) %&gt;% tally(sort = TRUE)
+
+find total amount of profile names
+==================================
+
+profile\_names = beer\_reviews %&gt;% group\_by(profile\_name) %&gt;% summarise(reviewed\_amount = n(),
+
+            overall_mean = mean(overall),
+            overall_sd = sd(overall)) %>%
+
+arrange(desc(reviewed\_amount)) %&gt;% \#filter(reviewed\_amount &gt;= 13) %&gt;% print(n = 20) profile\_names \# 33,388 total profile names glimpse(profile\_names)
+
+find lowest activity by filtering review amount
+===============================================
+
+beer\_reviews %&gt;% group\_by(profile\_name) %&gt;% summarise(review\_amount = n()) %&gt;% arrange(desc(review\_amount)) %&gt;% filter(review\_amount &lt; 2) \# 10,443 names submitted only 1 review
+
+\`\`\`
+
+For each profile name, we can summarize the overall ratings that were given out as well as the amount of reviews by each person.
+
+\`\`\`{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+stats\_function\_2(profile\_names*r**e**v**i**e**w**e**d*<sub>*a*</sub>*m**o**u**n**t*, ′*R**e**v**i**e**w**A**m**o**u**n**t*′)*s**t**a**t**s*<sub>*f*</sub>*u**n**c**t**i**o**n*<sub>2</sub>(*p**r**o**f**i**l**e*<sub>*n*</sub>*a**m**e**s*overall\_mean, 'Profile Name')
+
+\`\`\`
+
+From the *Review Amount* column, we can conclude that most people provided three ratings, as we can see from the median, but the average review per person is about 48 which is demonstrated by the mean, 47.52. Since there is a great disparity between the mean and the median, we can infer that the distribution of reviews per person will be right-skewed. This is due to having a small amount of people providing a large amount of reviews and thus skewing the distribution. It would be a safe assumption to say that they are proud beer drinkers.
+
+From the *Profile Name* column, we can conclude that most people rated a beer with a four, which was seen earlier with a histogram.
+
+### Machine Learning
+
+Since the goal is to cluster according to similarities, all necessary information must be included. This includes the independent variables (provided) such as the five rated aspects are aroma, palate, taste, appearance, and overall. In addition, the alcohol content and beer styles will play an important role in classifying similar beers. To add more information, we can calculate the overall grade, count the amount of reviews per beer and per brewery.
+
+`{r Mutate, message=FALSE, warning=FALSE, include=FALSE} beer_reviews =    beer_reviews %>%   mutate(ovr_grade = (taste + aroma + overall + appearance + palate)/5)`
+
+Goals:
+
+-   Create clusters based on similarities among beers
+-   Find optimal amount of clusters with the least amount of error
+
+Approach:
+
+-   Create multiple data sets with varying information for applying clustering
+-   For each data set, select columns for clustering
+-   Iterate multiple times in order to find the least amount of error
+-   Start with *k-means* technique, then *kcca*, *cclust*, *pam*, and *clara*
+-   Test for error using Rrand() to find optimal amount of clusters
+-   Plot Rrand() on the y-axis and the number of clusters on y-axis
+-   Repeat until the least amount of error and optimal amount of clusters are found
+
+\`\`\`{r Data Final Prep, message=FALSE, warning=FALSE, include=FALSE} \# try different data sets for k-mean \# ---- DATA SET \#1: k-means ---- \# add counts of beer name and brewery name beer\_reviews\_1 = beer\_reviews %&gt;% add\_count(beer\_name) %&gt;% add\_count(brewery\_name) %&gt;% add\_count(profile\_name) \# glimpse(beer\_reviews\_1) \# rename the columns of beer\_name tally and brewery\_name tally beer\_reviews\_1*b**e**e**r*<sub>*n*</sub>*a**m**e*<sub>*c*</sub>*n**t* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>1</sub>n beer\_reviews\_1*b**r**e**w**e**r**y*<sub>*n*</sub>*a**m**e*<sub>*c*</sub>*n**t* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>1</sub>nn beer\_reviews\_1*p**r**o**f**i**l**e*<sub>*n*</sub>*a**m**e*<sub>*c*</sub>*n**t* = *b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>1</sub>nnn \# select columns to work with beer\_reviews\_1 = beer\_reviews\_1 %&gt;% filter(beer\_name\_cnt &gt; 350 & brewery\_name\_cnt &gt; 10000 & profile\_name\_cnt &gt; 500) %&gt;% select(taste, aroma, appearance, overall, palate,beer\_abv, ovr\_grade, beer\_name\_cnt, brewery\_name\_cnt, profile\_name\_cnt,beer\_id,brewery\_id,beer\_name, brewery\_name, beer\_abv\_factor, beer\_style, general\_beer\_style)
+
+glimpse(beer\_reviews\_1) \`\`\`
+
+After multiple iterations, this data set proved to have the least amount of error based on the adjusted rand index (ARI).
+
+Since k-means is very susceptible to outliers, it is best to try and reduce them by setting some specific filters but without completely eliminating them. The effect of outliers can be seen by calculating the mean and median. Outliers will create disparity between the two by skewing the distribution towards the mean. Adding filters through trial and error, observe the mean and median converge. This convergence is due to outliers having less effect on the mean.
+
+`{r, echo=TRUE, message=FALSE, warning=FALSE} # using filter, attempt to remove some of the outliers stats_function_2(beer_reviews_1$beer_name_cnt, 'beer')  stats_function_2(beer_reviews_1$brewery_name_cnt, 'brewery') stats_function_2(beer_reviews_1$profile_name_cnt, 'profile name') stats_function_2(beer_reviews_1$beer_abv, 'abv') # look for median and mean converging, reduce the outliers' effect on mean`
+
+\`\`\`{r WSS plot, echo=FALSE, message=FALSE, warning=FALSE} \# ---- SCALE ---- \# \*\*\* NOTE: columns 1:7 and 4 clusters have highest Accuracy so far using k-means, 0.30 \# WITH: filter(beer\_name\_cnt &gt; 350 & brewery\_name\_cnt &gt; 10000 & profile\_name\_cnt &gt; 500) beer\_reviews\_df = scale(beer\_reviews\_1\[1:7\]) \# ---- (WSS) within-groups sums of squares ---- \# find the number of clusters to start with wssplot &lt;- function(data, nc = 15, seed = 1){ wss &lt;- (nrow(data)-1)\*sum(apply(data,2,var))
+
+for (i in 2:nc){ set.seed(seed) wss\[i\] &lt;- sum(kmeans(data, centers=i, iter.max = 100)$withinss)}
+
+plot(1:nc, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares") } wssplot(beer\_reviews\_df) \`\`\`
+
+Run k-means clustering on the data frame after scaling it and use adjusted rand index (ARI) for finding the accuracy. The plot will show the optimal amount of clusters with the greatest accuracy. The *taste* is chosen here because it would be time consuming to plot each observation individually.
+
+\`\`\`{r K-MEANS, message=FALSE, warning=FALSE, include=FALSE} \# ---- K-Means ---- \# choose clusters kmc\_beer = kmeans(beer\_reviews\_df, centers = 4, iter.max = 20, nstart = 25) beerClusters = kmc\_beer$cluster \# list of clusters
+
+---- ERROR/AGREEMENT -----
+==========================
+
+find agreement of partitions
+============================
+
+randIndex(table(beer\_reviews\_1*o**v**e**r**a**l**l*, *b**e**e**r**C**l**u**s**t**e**r**s*))*r**a**n**d**I**n**d**e**x*(*t**a**b**l**e*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>1</sub>taste, beerClusters)) randIndex(table(beer\_reviews\_1*a**r**o**m**a*, *b**e**e**r**C**l**u**s**t**e**r**s*))*r**a**n**d**I**n**d**e**x*(*t**a**b**l**e*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>1</sub>appearance, beerClusters)) randIndex(table(beer\_reviews\_1*p**a**l**a**t**e*, *b**e**e**r**C**l**u**s**t**e**r**s*))*r**a**n**d**I**n**d**e**x*(*t**a**b**l**e*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>1</sub>ovr\_grade, beerClusters))
+
+reduce the dataset to 10,000 points to make it easier to work with and plot faster
+==================================================================================
+
+set.seed(1) beer\_reviews\_10k = sample\_n(beer\_reviews\_1, size = 10000) \# glimpse(beer\_reviews\_10k) \# ---- SCALE ---- beer\_reviews\_df2 = scale(beer\_reviews\_10k\[1:7\]) \`\`\`
+
+\`\`\`{r PLOT: RandIndex, echo=FALSE, message=FALSE, warning=FALSE} \# ----- PLOT Rrand ---- \# plot error on y-axis, and number of clusters on x-axis \# build a cluster tibble for k-means k = data\_frame(1:nrow(beer\_reviews\_df2)) \# specify length of data frame for clusters for (i in 1:15){ k\[i\] = kmeans(beer\_reviews\_df2, centers = i, iter.max = 50, nstart = 25)$cluster } names(k) = c('k1','k2','k3','k4','k5','k6','k7','k8','k9','k10','k11','k12','k13','k14','k15')
+
+r1 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k1)) r2 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k2)) r3 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k3)) r4 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k4)) r5 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k5)) r6 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k6)) r7 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k7)) r8 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k8)) r9 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k9)) r10 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k10)) r11 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k11)) r12 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k12)) r13 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k13)) r14 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k14)) r15 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k15)) r13 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k13)) r14 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k14)) r15 = randIndex(table(beer\_reviews\_10k*t**a**s**t**e*, *k*k15)) rand\_Ind = c(r1, r2,r3, r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15) clus\_num = 1:15 \# plot amount of clusters (x) and Rand value (y) plot(clus\_num, rand\_Ind) \# this plot indicates that the least error occurs with 4 clusters \`\`\`
+
+The accuracy levels appear to be relatively low, ranging from 0.1260 to 0.3013, depending on the chosen aspect to compute with *taste* having highest and *appearance* having lowest accuracy. This may be due to a number things. For one, outliers can have adverse effects on the clusters' centroids and thus affecting the clusters' composition. Also, having a data set populated with human opinions will naturally created some disagreement around the ratings. This may create additional overlap in clusters and, in turn, result in lower accuracy.
+
+According to the plot, the optimal amount of clusters to use is four which produces an accuracy of 0.3013 for the *taste* using k-means.
+
+Since k-means is very susceptible to outliers, it is appropriate to try other methods of clustering and distance calculations in order to improve the accuracy. Other methods such as *kcca*, *cclust*, *pam*, and *clara* will be applied and compared to each other to find one with least error.
+
+\`\`\`{r Other methods, echo=FALSE, message=FALSE, warning=FALSE} \# Try various methods to find least error with Rrand
+\# ---- KCCA ---- beer\_kcca = kcca(beer\_reviews\_df2, k = 4, family=kccaFamily('kmedians')) randIndex(table(beer\_reviews\_10k$taste, beer\_kcca@cluster))\# kmedians -&gt; 0.2761 randIndex(table(beer\_reviews\_10k$aroma, <beer_kcca@cluster>)) randIndex(table(beer\_reviews\_10k$ovr\_grade, beer\_kcca@cluster)) \# ---- CCLUST ---- beer\_ccl = cclust(beer\_reviews\_df2, k = 4, method = 'hardcl', dist = 'manhattan') \# beer\_ccl@cluster randIndex(table(beer\_reviews\_10k$taste, <beer_ccl@cluster>))\# hardcl + manhattan -&gt; 0.3673 randIndex(table(beer\_reviews\_10k$aroma, beer\_ccl@cluster)) \# 0.2346 randIndex(table(beer\_reviews\_10k$ovr\_grade, <beer_ccl@cluster>)) \# 0.2051 \# ---- PAM ---- \#clusplot(beer\_pam) beer\_pam = pam(beer\_reviews\_df2, k = 4, metric = 'manhattan', cluster.only = TRUE) \#bpam\_clust = beer\_pam*c**l**u**s**t**e**r**i**n**g**r**a**n**d**I**n**d**e**x*(*t**a**b**l**e*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>10</sub>*k*taste, beer\_pam)) \# manhattan -&gt; 0.3783 randIndex(table(beer\_reviews\_10k$aroma, beer\_pam)) \# 0.2407 randIndex(table(beer\_reviews\_10k$ovr\_grade, beer\_pam)) \# 0.2040 \# ---- CLARA ---- beer\_clara = clara(beer\_reviews\_df2, k = 4, metric = 'manhattan') bclr\_clust = beer\_clara*c**l**u**s**t**e**r**i**n**g**r**a**n**d**I**n**d**e**x*(*t**a**b**l**e*(*b**e**e**r*<sub>*r*</sub>*e**v**i**e**w**s*<sub>10</sub>*k*taste, bclr\_clust)) \# manhattan -&gt; 0.3071 randIndex(table(beer\_reviews\_10k$aroma, bclr\_clust)) \# 0.2256 randIndex(table(beer\_reviews\_10k$ovr\_grade, bclr\_clust)) \# 0.1914
+
+\`\`\`
+
+After testing others methods, *cclust* appears to produce the best results. Although, *pam* produced very similar accuracy, *cclust* works much faster and therefore will be used for final clustering.
+
+\`\`\`{r Conclusion: CCLUST, echo=TRUE, message=FALSE, warning=FALSE} \# ---- CONCLUSION ---- \# CCLUST produces least error and works relatively quickly \# PAM also results in a lower error but works much slower
+
+---- CCLUST ----
+================
+
+now use the full data set
+=========================
+
+beer\_ccl = cclust(beer\_reviews\_df, k = 4, method = 'hardcl', dist = 'manhattan') randIndex(table(beer\_reviews\_1$taste, beer\_ccl@cluster))\# hardcl + manhattan -&gt; 0.3658 randIndex(table(beer\_reviews\_1$overall, <beer_ccl@cluster>))\# hardcl + manhattan -&gt; 0.3033 randIndex(table(beer\_reviews\_1$ovr\_grade, <beer_ccl@cluster>))\# hardcl + manhattan -&gt; 0.2074
+
+\`\`\`
+
+\`\`\`{r Summarize Cluster, echo=FALSE, message=FALSE, warning=FALSE} \# ---- Summarize the Clusters ---- \# extract cluster info and summarize resulting clusters <beer_ccl@clusinfo> ccl\_clust = <beer_ccl@cluster> cluster\_smry = beer\_reviews\_1 %&gt;% mutate(ccl\_clust = <beer_ccl@cluster>) %&gt;% group\_by(ccl\_clust) %&gt;% summarise\_all('mean') \# Cluster 4 appears to have the highest ratings for taste, aroma, appearance, overall, palate, and overall grade \# it also has the highest amount of reviews \# \*\*\*NOTE: running clustering again MAY not return the same cluster number as having the highest ratings. It's not always \#4
+
+\`\`\`
+
+\`\`\`{r Subset cluster, message=FALSE, warning=FALSE, include=FALSE} \# find the highest rated cluster top\_cluster = cluster\_smry %&gt;% filter(ovr\_grade &gt; 4.15) top\_cluster$ccl\_clust \# use this cluster for making rec's
+
+change the order of columns
+===========================
+
+glimpse(beer\_reviews\_1) beer\_reviews\_1\_ordered = beer\_reviews\_1 %&gt;% select(taste, aroma, appearance, overall, palate,beer\_abv, ovr\_grade,beer\_name, brewery\_name, beer\_abv\_factor, beer\_style, general\_beer\_style, beer\_name\_cnt, brewery\_name\_cnt)
+
+explore contents of the cluster and search through them
+=======================================================
+
+beer\_reviews\_1\_sub = subset(beer\_reviews\_1\_ordered, ccl\_clust == top\_cluster$ccl\_clust) \`\`\`
+
+We'll choose cluster four because it has the highest mean ratings for the five aspects. Also, it also has the highest mean rating for alcohol content and most reviews per beer.
+
+Now, to make a recommendation, we can search for specific criteria using the *filter()* function and then store it in a new data frame. This new data frame will then be analysed in order to further narrow down the results. Lastly, using sample\_n() function, five beers will be selected randomly to create the final recommendation.
+
+In the end, out of thousands of choices, this set of five beers will provide a more reasonable selection for the customer.
+
+\`\`\`{r, echo=TRUE, message=FALSE, warning=FALSE} \# ---- RECOMMENDATION ---- \# list of criteria: \# taste, overall, aroma, palate, appearance, overall grade, beer ABV, beer style, general beer style
+
+search for specific criteria
+============================
+
+beer\_rec\_df = beer\_reviews\_1\_ordered %&gt;% filter(general\_beer\_style == 'lager', beer\_abv\_factor == 'normal')
+
+analyse the criteria df further before recommendation
+=====================================================
+
+beer\_reviews\_1\_sub = beer\_rec\_df %&gt;% group\_by(beer\_name) %&gt;% summarise( review\_count = n(), overall\_mean = mean(overall), taste\_mean = mean(taste), aroma\_mean = mean(aroma), appearance\_mean = mean(appearance), palate\_mean = mean(palate), rev\_cnt\_ovr = review\_count/overall\_mean, mean\_consistency = (overall\_mean + taste\_mean + aroma\_mean + appearance\_mean + palate\_mean)/5,
+
+    overall_sd       = sd(overall), 
+    taste_sd         = sd(taste),
+    aroma_sd         = sd(aroma), 
+    appearance_sd    = sd(appearance), 
+    palate_sd        = sd(palate),
+    sd_consistency   = (overall_sd + taste_sd + aroma_sd + appearance_sd + palate_sd)/5) %>%
+
+filter(review\_count &gt;= 10) %&gt;% arrange(desc(overall\_mean), desc(taste\_mean), desc(aroma\_mean), desc(appearance\_mean), desc(palate\_mean))
+
+select random beer from list
+============================
+
+using sample\_n(), generate 5 recommendations
+=============================================
+
+rec\_func = function(df){ if (length(df*b**e**e**r*<sub>*n*</sub>*a**m**e*)&lt; = 5)*h**e**a**d*(*d**f*)*e**l**s**e**i**f*(*l**e**n**g**t**h*(*d**f*beer\_name) &gt; 5){ head(sample\_n(df, 5)) } else if (length(df$beer\_name) == 0){ print('None found') } } rec\_func(beer\_reviews\_1\_sub)
+
+\`\`\`
+
+### Further Research
+
+This recommendation system is far from perfect and can greatly benefit from further research. Current accuracy levels are relatively low and could use improvement. Other machine learning techniques such as decision trees or k-nearest neighbors can be applied with the same goal of classification. Optionally, multiple methods can be combined together to further improve accuracy in classifying this data set.
+
+Another way that a recommendation system can be created is based on the profile names. Since people tend to have personal preferences, it is quite likely that the profile names share similar tastes. By finding and comparing patterns for preferences across all profile names we can find similarities and create recommendations based on those similarities.
+
+Logistic regression can also be applied in predicting whether someone will *like* or *dislike* (a binary outcome) a recommended beer. However, a *like* and *dislike* would have to be defined clearly. For example, we can try to predict whether the customer will rate the recommended beer higher or lower than the mean. The results can then be used to modify the model and improve performance.
+
+### Applying Results
+
+1.  This recommendation system can aid in decision making when it comes to beer; however, it would be helpful to know where the recommended beers can be purchased within the local area. With more data, it would be possible to provide the customer with the exact store locations with their recommended beers. As a result, this may drive traffic to undiscovered places with great selection of beer and improve the sales within the establishment. Also, knowing the most popular beers will help the establishment maintain their stock of those particular beers in high demand.
+
+2.  From the perspective of the beer distributors and manufacturers these results may also be used to improve sales. Although people have diverse preferences, these results give us a glimpse as to which beers are the most popular among people and this can certainly be advantageous to distributors and manufacturers. Essentially, by finding the most popular beers we can see which beers have the greatest demand. Also, since this data set includes many seasonal beers, it would be useful to predict each beer's demand for each season. From here, the supply can be adjusted to maximize profits.
+
+3.  An application developer or a website/blog comprised of beer enthusiasts with a successful recommendation system may benefit from increased traffic to their domain. From the perspective of a customer, anyone with a desire in finding a great beer to try with their next meal will certainly be attracted to a website/blog or an application with a solid recommendation system. Additionally, these findings can be used in other areas that involve classification. With some modifications, this recommendation system can be used for classifying restaurant reviews and recommending different places to eat. Further, the two recommendations can be combined together into a single easy-to-use application. Altogether, it will become much easier to find the perfect place for dining with a perfect beer for pairing.
